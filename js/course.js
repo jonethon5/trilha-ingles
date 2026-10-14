@@ -1,0 +1,420 @@
+// Conteúdo do curso. Cada frase é [português, inglês, alternativas aceitas (opcional)].
+// O vocabulário de cada lição é [inglês, português] e aparece antes dos exercícios.
+
+export const COURSE = {
+  id: "en-pt-1",
+  title: "Inglês para o dia a dia",
+  units: [
+    {
+      id: "u1",
+      title: "Primeiros passos",
+      desc: "Cumprimentar e se apresentar",
+      lessons: [
+        {
+          title: "Olá!",
+          vocab: [["hello", "olá"], ["good morning", "bom dia"], ["thank you", "obrigado"], ["please", "por favor"]],
+          sentences: [
+            ["Olá, bom dia.", "Hello, good morning."],
+            ["Boa noite, até amanhã.", "Good night, see you tomorrow."],
+            ["Como você está?", "How are you?"],
+            ["Eu estou bem, obrigado.", "I'm fine, thank you."],
+            ["Prazer em conhecer você.", "Nice to meet you."],
+            ["Por favor, fale devagar.", "Please speak slowly."],
+            ["Obrigado pela sua ajuda.", "Thank you for your help."],
+            ["Com licença, você fala inglês?", "Excuse me, do you speak English?"],
+          ],
+        },
+        {
+          title: "Quem sou eu",
+          vocab: [["name", "nome"], ["from", "de (origem)"], ["student", "estudante"], ["friend", "amigo"]],
+          sentences: [
+            ["Meu nome é Ana.", "My name is Ana."],
+            ["Eu sou do Brasil.", "I'm from Brazil."],
+            ["Eu sou estudante.", "I'm a student."],
+            ["Ela é minha amiga.", "She is my friend."],
+            ["Ele é meu irmão.", "He is my brother."],
+            ["Nós somos amigos.", "We are friends."],
+            ["De onde você é?", "Where are you from?"],
+            ["Qual é o seu nome?", "What is your name?"],
+          ],
+        },
+        {
+          title: "Números e datas",
+          vocab: [["years old", "anos de idade"], ["how old", "quantos anos"], ["birthday", "aniversário"], ["today", "hoje"]],
+          sentences: [
+            ["Eu tenho vinte anos.", "I'm twenty years old."],
+            ["Quantos anos você tem?", "How old are you?"],
+            ["Eu tenho dois irmãos.", "I have two brothers."],
+            ["Ela tem três gatos.", "She has three cats."],
+            ["Qual é o seu número de telefone?", "What is your phone number?"],
+            ["Meu aniversário é em maio.", "My birthday is in May."],
+            ["Hoje é segunda-feira.", "Today is Monday."],
+            ["Que horas são?", "What time is it?"],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u2",
+      title: "Dia a dia",
+      desc: "Falar da sua rotina",
+      lessons: [
+        {
+          title: "De manhã",
+          vocab: [["wake up", "acordar"], ["breakfast", "café da manhã"], ["shower", "banho"], ["early", "cedo"]],
+          sentences: [
+            ["Eu acordo às sete horas.", "I wake up at seven o'clock."],
+            ["Eu tomo banho de manhã.", "I take a shower in the morning."],
+            ["Eu tomo café da manhã em casa.", "I have breakfast at home."],
+            ["Ela acorda muito cedo.", "She wakes up very early."],
+            ["Eu escovo os dentes.", "I brush my teeth."],
+            ["Nós saímos de casa às oito.", "We leave home at eight."],
+            ["Ele bebe café todos os dias.", "He drinks coffee every day."],
+            ["Eu não gosto de acordar cedo.", "I don't like to wake up early."],
+          ],
+        },
+        {
+          title: "Trabalho e escola",
+          vocab: [["work", "trabalho / trabalhar"], ["by bus", "de ônibus"], ["late", "atrasado / tarde"], ["class", "aula"]],
+          sentences: [
+            ["Eu vou para o trabalho de ônibus.", "I go to work by bus."],
+            ["Ela trabalha em um hospital.", "She works in a hospital."],
+            ["Eu estudo inglês à noite.", "I study English at night."],
+            ["Ele sempre chega atrasado.", "He always arrives late."],
+            ["Nós almoçamos ao meio-dia.", "We have lunch at noon."],
+            ["Você trabalha aos sábados?", "Do you work on Saturdays?"],
+            ["Eu não trabalho aos domingos.", "I don't work on Sundays."],
+            ["A aula começa às nove.", "The class starts at nine."],
+          ],
+        },
+        {
+          title: "À noite",
+          vocab: [["dinner", "jantar"], ["watch", "assistir"], ["tired", "cansado"], ["go to bed", "ir dormir"]],
+          sentences: [
+            ["Eu chego em casa às seis.", "I get home at six."],
+            ["Nós jantamos juntos.", "We have dinner together."],
+            ["Eu assisto TV depois do jantar.", "I watch TV after dinner."],
+            ["Ela lê um livro antes de dormir.", "She reads a book before bed."],
+            ["Eu estou muito cansado hoje.", "I'm very tired today."],
+            ["Eu durmo oito horas por noite.", "I sleep eight hours a night."],
+            ["A que horas você vai dormir?", "What time do you go to bed?"],
+            ["Ele nunca vai dormir tarde.", "He never goes to bed late."],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u3",
+      title: "Comida",
+      desc: "Gostos, restaurante e mercado",
+      lessons: [
+        {
+          title: "Do que eu gosto",
+          vocab: [["like", "gostar"], ["love", "adorar"], ["favorite", "favorito"], ["food", "comida"]],
+          sentences: [
+            ["Eu gosto de pizza.", "I like pizza."],
+            ["Ela adora chocolate.", "She loves chocolate."],
+            ["Eu não gosto de peixe.", "I don't like fish."],
+            ["Você gosta de comida apimentada?", "Do you like spicy food?"],
+            ["Minha comida favorita é arroz com feijão.", "My favorite food is rice and beans."],
+            ["Ele não come carne.", "He doesn't eat meat."],
+            ["Nós gostamos de cozinhar.", "We like to cook."],
+            ["Qual é a sua fruta favorita?", "What is your favorite fruit?"],
+          ],
+        },
+        {
+          title: "No restaurante",
+          vocab: [["menu", "cardápio"], ["the check", "a conta"], ["a glass of water", "um copo de água"], ["would like", "gostaria"]],
+          sentences: [
+            ["Uma mesa para dois, por favor.", "A table for two, please."],
+            ["Posso ver o cardápio?", "Can I see the menu?"],
+            ["Eu gostaria de um copo de água.", "I would like a glass of water."],
+            ["Eu quero um hambúrguer com batata frita.", "I want a burger with fries."],
+            ["A comida está deliciosa.", "The food is delicious."],
+            ["A conta, por favor.", "The check, please."],
+            ["Vocês aceitam cartão?", "Do you take cards?"],
+            ["Você quer sobremesa?", "Do you want dessert?"],
+          ],
+        },
+        {
+          title: "No mercado",
+          vocab: [["buy", "comprar"], ["how much", "quanto"], ["cheap", "barato"], ["expensive", "caro"]],
+          sentences: [
+            ["Eu preciso comprar leite.", "I need to buy milk."],
+            ["Quanto custa isso?", "How much is this?"],
+            ["Isso é muito caro.", "This is very expensive."],
+            ["Onde ficam as frutas?", "Where are the fruits?"],
+            ["Eu quero dois quilos de arroz.", "I want two kilos of rice."],
+            ["Nós não temos ovos em casa.", "We don't have eggs at home."],
+            ["Você tem uma sacola?", "Do you have a bag?"],
+            ["Este pão é barato.", "This bread is cheap."],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u4",
+      title: "Casa e família",
+      desc: "Pessoas e lugares próximos",
+      lessons: [
+        {
+          title: "Família",
+          vocab: [["mother", "mãe"], ["father", "pai"], ["sister", "irmã"], ["children", "filhos / crianças"]],
+          sentences: [
+            ["Minha mãe é professora.", "My mother is a teacher."],
+            ["Meu pai trabalha muito.", "My father works a lot."],
+            ["Eu tenho uma irmã mais velha.", "I have an older sister."],
+            ["Eles têm dois filhos.", "They have two children."],
+            ["Meus avós moram no interior.", "My grandparents live in the countryside."],
+            ["Você tem irmãos?", "Do you have any siblings?"],
+            ["Minha família é grande.", "My family is big."],
+            ["Eu moro com meus pais.", "I live with my parents."],
+          ],
+        },
+        {
+          title: "Em casa",
+          vocab: [["there is / there are", "há / tem"], ["bedroom", "quarto"], ["kitchen", "cozinha"], ["near", "perto"]],
+          sentences: [
+            ["Eu moro em um apartamento pequeno.", "I live in a small apartment."],
+            ["Há dois quartos na minha casa.", "There are two bedrooms in my house."],
+            ["A cozinha é muito grande.", "The kitchen is very big."],
+            ["O banheiro fica no andar de cima.", "The bathroom is upstairs."],
+            ["Tem um parque perto da minha casa.", "There is a park near my house."],
+            ["Onde estão as minhas chaves?", "Where are my keys?"],
+            ["O livro está em cima da mesa.", "The book is on the table."],
+            ["Eu preciso limpar a casa.", "I need to clean the house."],
+          ],
+        },
+        {
+          title: "Como as pessoas são",
+          vocab: [["tall", "alto"], ["long hair", "cabelo comprido"], ["kind", "simpático / gentil"], ["young", "jovem"]],
+          sentences: [
+            ["Meu irmão é alto.", "My brother is tall."],
+            ["Ela tem cabelo comprido.", "She has long hair."],
+            ["Ele é muito simpático.", "He is very kind."],
+            ["Minha avó tem oitenta anos.", "My grandmother is eighty years old."],
+            ["Eles são muito jovens.", "They are very young."],
+            ["Como ela é?", "What is she like?"],
+            ["Ele usa óculos.", "He wears glasses."],
+            ["Ela é mais alta do que eu.", "She is taller than me."],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u5",
+      title: "Na rua",
+      desc: "Direções, transporte e compras",
+      lessons: [
+        {
+          title: "Pedindo direções",
+          vocab: [["left", "esquerda"], ["right", "direita"], ["straight", "em frente"], ["far", "longe"]],
+          sentences: [
+            ["Onde fica o banheiro?", "Where is the bathroom?"],
+            ["Vire à esquerda na esquina.", "Turn left at the corner."],
+            ["Siga em frente por dois quarteirões.", "Go straight for two blocks."],
+            ["O banco fica à direita.", "The bank is on the right."],
+            ["É longe daqui?", "Is it far from here?"],
+            ["Fica perto da estação.", "It is near the station."],
+            ["Eu estou perdido.", "I'm lost."],
+            ["Você pode me ajudar?", "Can you help me?"],
+          ],
+        },
+        {
+          title: "Transporte",
+          vocab: [["ticket", "passagem"], ["train", "trem"], ["airport", "aeroporto"], ["delayed", "atrasado"]],
+          sentences: [
+            ["Eu preciso de uma passagem para Londres.", "I need a ticket to London."],
+            ["A que horas sai o trem?", "What time does the train leave?"],
+            ["Onde eu posso pegar um táxi?", "Where can I get a taxi?"],
+            ["Quanto tempo leva para chegar ao aeroporto?", "How long does it take to get to the airport?"],
+            ["Este ônibus vai para o centro?", "Does this bus go downtown?"],
+            ["Eu vou a pé para o trabalho.", "I walk to work."],
+            ["O voo está atrasado.", "The flight is delayed."],
+            ["Eu perdi o meu ônibus.", "I missed my bus."],
+          ],
+        },
+        {
+          title: "Compras",
+          vocab: [["size", "tamanho"], ["try on", "experimentar"], ["pay", "pagar"], ["too small", "pequeno demais"]],
+          sentences: [
+            ["Eu estou só olhando, obrigado.", "I'm just looking, thank you."],
+            ["Você tem isso em outro tamanho?", "Do you have this in another size?"],
+            ["Posso experimentar esta camisa?", "Can I try on this shirt?", ["Can I try this shirt on?"]],
+            ["Eu vou levar este.", "I will take this one."],
+            ["Posso pagar com cartão?", "Can I pay by card?"],
+            ["Esta jaqueta é pequena demais.", "This jacket is too small."],
+            ["Eu gosto desta cor.", "I like this color."],
+            ["Onde fica o provador?", "Where is the fitting room?"],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u6",
+      title: "Agora",
+      desc: "O que está acontecendo e como você se sente",
+      lessons: [
+        {
+          title: "Neste momento",
+          vocab: [["doing", "fazendo"], ["now", "agora"], ["waiting for", "esperando"], ["raining", "chovendo"]],
+          sentences: [
+            ["O que você está fazendo?", "What are you doing?"],
+            ["Eu estou estudando inglês agora.", "I'm studying English now."],
+            ["Ela está falando ao telefone.", "She is talking on the phone."],
+            ["Está chovendo lá fora.", "It is raining outside."],
+            ["Nós estamos esperando o ônibus.", "We are waiting for the bus."],
+            ["Eles estão jogando futebol.", "They are playing soccer."],
+            ["Eu não estou trabalhando hoje.", "I'm not working today."],
+            ["Você está me ouvindo?", "Are you listening to me?"],
+          ],
+        },
+        {
+          title: "Sentimentos",
+          vocab: [["hungry", "com fome"], ["thirsty", "com sede"], ["happy", "feliz"], ["worried", "preocupado"]],
+          sentences: [
+            ["Eu estou com fome.", "I'm hungry."],
+            ["Ela está feliz hoje.", "She is happy today."],
+            ["Por que você está triste?", "Why are you sad?"],
+            ["Eu estou com sede.", "I'm thirsty."],
+            ["Ele está preocupado com a prova.", "He is worried about the test."],
+            ["Nós estamos animados para a viagem.", "We are excited about the trip."],
+            ["Eu estou com frio.", "I'm cold."],
+            ["Você está bem?", "Are you okay?"],
+          ],
+        },
+        {
+          title: "O que eu sei fazer",
+          vocab: [["can", "saber / poder"], ["can't", "não saber / não poder"], ["swim", "nadar"], ["drive", "dirigir"]],
+          sentences: [
+            ["Eu sei nadar.", "I can swim."],
+            ["Ela sabe tocar violão.", "She can play the guitar."],
+            ["Eu não sei dirigir.", "I can't drive."],
+            ["Você sabe cozinhar?", "Can you cook?"],
+            ["Ele fala três idiomas.", "He speaks three languages."],
+            ["Eu não consigo ouvir você.", "I can't hear you."],
+            ["Nós podemos ir amanhã.", "We can go tomorrow."],
+            ["Você pode repetir isso, por favor?", "Can you repeat that, please?"],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u7",
+      title: "Passado",
+      desc: "Contar o que aconteceu",
+      lessons: [
+        {
+          title: "Como foi",
+          vocab: [["was / were", "estava / era"], ["yesterday", "ontem"], ["last night", "ontem à noite"], ["weekend", "fim de semana"]],
+          sentences: [
+            ["Eu estava em casa ontem.", "I was at home yesterday.", ["Yesterday I was at home."]],
+            ["O filme foi muito bom.", "The movie was very good."],
+            ["Onde você estava?", "Where were you?"],
+            ["Nós estávamos cansados.", "We were tired."],
+            ["Ela não estava na festa.", "She wasn't at the party."],
+            ["Estava muito frio ontem à noite.", "It was very cold last night."],
+            ["Eles estavam atrasados para a aula.", "They were late for class."],
+            ["Como foi o seu fim de semana?", "How was your weekend?"],
+          ],
+        },
+        {
+          title: "O que eu fiz",
+          vocab: [["went", "fui / foi"], ["ate", "comi / comeu"], ["bought", "comprei / comprou"], ["saw", "vi / viu"]],
+          sentences: [
+            ["Eu fui ao cinema ontem.", "I went to the movies yesterday.", ["Yesterday I went to the movies."]],
+            ["Nós comemos pizza no jantar.", "We ate pizza for dinner."],
+            ["Ela comprou um carro novo.", "She bought a new car."],
+            ["Eu vi o seu irmão hoje.", "I saw your brother today.", ["Today I saw your brother."]],
+            ["Ele trabalhou até tarde.", "He worked late."],
+            ["Eu estudei a noite toda.", "I studied all night."],
+            ["Eles viajaram para a praia.", "They traveled to the beach."],
+            ["Eu esqueci as minhas chaves.", "I forgot my keys."],
+          ],
+        },
+        {
+          title: "Perguntas no passado",
+          vocab: [["did", "auxiliar do passado"], ["didn't", "não (passado)"], ["arrive", "chegar"], ["understand", "entender"]],
+          sentences: [
+            ["O que você fez ontem?", "What did you do yesterday?"],
+            ["Eu não dormi bem.", "I didn't sleep well."],
+            ["Você gostou do filme?", "Did you like the movie?"],
+            ["Aonde vocês foram?", "Where did you go?"],
+            ["Ela não me ligou.", "She didn't call me."],
+            ["Eu não entendi a pergunta.", "I didn't understand the question."],
+            ["Quando você chegou?", "When did you arrive?"],
+            ["Nós não vimos nada.", "We didn't see anything."],
+          ],
+        },
+      ],
+    },
+    {
+      id: "u8",
+      title: "Planos",
+      desc: "Futuro, convites e vontades",
+      lessons: [
+        {
+          title: "O que eu vou fazer",
+          vocab: [["going to", "vou / vai (plano)"], ["tomorrow", "amanhã"], ["tonight", "hoje à noite"], ["next year", "ano que vem"]],
+          sentences: [
+            ["Eu vou viajar amanhã.", "I'm going to travel tomorrow.", ["Tomorrow I'm going to travel."]],
+            ["Ela vai comprar uma casa.", "She is going to buy a house."],
+            ["O que você vai fazer hoje à noite?", "What are you going to do tonight?"],
+            ["Nós vamos visitar meus avós.", "We are going to visit my grandparents."],
+            ["Eu não vou trabalhar na sexta.", "I'm not going to work on Friday."],
+            ["Vai chover amanhã.", "It is going to rain tomorrow."],
+            ["Eles vão se casar no ano que vem.", "They are going to get married next year."],
+            ["Você vai à festa?", "Are you going to the party?"],
+          ],
+        },
+        {
+          title: "Promessas e previsões",
+          vocab: [["will", "auxiliar do futuro"], ["won't", "não vai"], ["later", "mais tarde"], ["maybe", "talvez"]],
+          sentences: [
+            ["Eu te ligo mais tarde.", "I will call you later."],
+            ["Eu vou te ajudar.", "I will help you."],
+            ["Eu acho que tudo vai ficar bem.", "I think everything will be fine."],
+            ["Ela não vai gostar disso.", "She won't like that."],
+            ["Eu já volto.", "I will be right back."],
+            ["Talvez eu vá com você.", "Maybe I will go with you."],
+            ["Você vai estar em casa amanhã?", "Will you be home tomorrow?"],
+            ["Eu vejo você na segunda.", "I will see you on Monday."],
+          ],
+        },
+        {
+          title: "Convites e vontades",
+          vocab: [["want to", "querer"], ["let's", "vamos"], ["should", "deveria"], ["hope", "esperar (ter esperança)"]],
+          sentences: [
+            ["Vamos tomar um café.", "Let's get a coffee."],
+            ["Eu quero aprender inglês.", "I want to learn English."],
+            ["Você gostaria de sair para jantar?", "Would you like to go out for dinner?"],
+            ["Eu preciso praticar todos os dias.", "I need to practice every day."],
+            ["Você deveria descansar um pouco.", "You should rest a little."],
+            ["Eu adoraria ir com vocês.", "I would love to go with you."],
+            ["Vamos nos encontrar às oito.", "Let's meet at eight."],
+            ["Eu espero ver você em breve.", "I hope to see you soon."],
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+// Lista plana de lições, na ordem da trilha, com ids estáveis para lições e frases.
+export function flatLessons(course = COURSE) {
+  const out = [];
+  course.units.forEach((unit, unitIndex) => {
+    unit.lessons.forEach((lesson, lessonIndex) => {
+      const id = `${unit.id}-l${lessonIndex + 1}`;
+      out.push({
+        id,
+        unitIndex,
+        lessonIndex,
+        title: lesson.title,
+        vocab: lesson.vocab,
+        sentences: lesson.sentences.map(([pt, en, alts = []], i) => ({ id: `${id}-s${i + 1}`, pt, en, alts })),
+      });
+    });
+  });
+  return out;
+}
