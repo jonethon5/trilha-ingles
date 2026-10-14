@@ -4,6 +4,7 @@ import { $, h, app, actions, show, save, toast, barHtml, allSentences, wordPool,
 import { vocabFile } from "../audio-paths.js";
 import { owl } from "../owl.js";
 import { character, castFor } from "../characters.js";
+import { speakerFor } from "../voices.js";
 import * as fx from "../fx.js";
 
 const USES_HEARTS = { lesson: true, unit: true, practice: false };
@@ -40,7 +41,7 @@ export function startSession({ kind, title, plan, sentences = [], lessonId = nul
     shown: null,
     phase: "answer",
     startedAt: Date.now(),
-    cast: castFor(title), // o personagem que acompanha esta sessão
+    cast: castFor(lessonId || title), // o personagem dos exercícios sem frase (ligar pares)
     entering: false, // true no primeiro desenho de cada exercício, para animar a entrada
     lastFraction: 0,
   };
@@ -75,8 +76,11 @@ function bubble(text, sentence, lang) {
 }
 
 // O personagem da sessão, com a expressão do momento: neutro, contente no acerto, triste no erro.
+// É sempre o personagem dono da voz da frase: quem aparece é quem fala.
 function actor(height = 132) {
-  const { phase, current, cast } = app.session;
+  const { phase, current, shown } = app.session;
+  const cast = shown?.s ? speakerFor(shown.s.id) : app.session.cast;
+  if (cast === "cora") return owl(phase !== "feedback" ? "normal" : current.ok ? "happy" : "sad", height * 0.62);
   if (phase !== "feedback") return character(cast, { height });
   return character(cast, current.ok ? { mood: "happy", height, cls: "cheer" } : { mood: "sad", height, cls: "droop" });
 }

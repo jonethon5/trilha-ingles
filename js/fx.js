@@ -24,7 +24,7 @@ export function shake(el) {
   el.animate([0, -9, 9, -6, 6, -3, 0].map((x) => ({ transform: `translateX(${x}px)` })), { duration: 380 });
 }
 
-const COLORS = ["#5b4fe0", "#f5a623", "#2aa55b", "#e5484d", "#2a8fd6", "#d6408a"];
+const COLORS = ["#58cc02", "#ffc800", "#1cb0f6", "#ff4b4b", "#ce82ff", "#ff9600"];
 
 export function confetti(count = 60) {
   if (reduced() || !document.body.animate) return;

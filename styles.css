@@ -1,24 +1,30 @@
+/* Paleta viva, no espírito dos apps de idiomas: verde para avançar, azul para escolher,
+   vermelho para errar, amarelo e laranja para recompensa e sequência. */
 :root {
   --bg: #ffffff;
   --surface: #ffffff;
-  --sunken: #f4f5f7;
-  --text: #2b2f36;
-  --muted: #7a818c;
-  --line: #e3e5ea;
-  --primary: #5b4fe0;
-  --primary-dark: #4337b8;
-  --primary-soft: #ecebff;
-  --ok: #2aa55b;
-  --ok-dark: #1e7f44;
-  --ok-soft: #d9f6e3;
-  --bad: #e5484d;
-  --bad-dark: #b3282d;
-  --bad-soft: #fde1e2;
-  --gold: #f5a623;
-  --gold-dark: #c7820f;
-  --blue: #2a8fd6;
-  --locked: #e3e5ea;
-  --locked-dark: #c6cad2;
+  --sunken: #f7f7f7;
+  --text: #4b4b4b;
+  --muted: #8a8f95;
+  --line: #e5e5e5;
+  --primary: #58cc02;
+  --primary-dark: #58a700;
+  --primary-soft: #d7ffb8;
+  --ok: #58cc02;
+  --ok-dark: #58a700;
+  --ok-soft: #d7ffb8;
+  --bad: #ff4b4b;
+  --bad-dark: #ea2b2b;
+  --bad-soft: #ffdfe0;
+  --gold: #ffc800;
+  --gold-dark: #e5a500;
+  --orange: #ff9600;
+  --blue: #1cb0f6;
+  --blue-dark: #1899d6;
+  --blue-soft: #ddf4ff;
+  --purple: #ce82ff;
+  --locked: #e5e5e5;
+  --locked-dark: #cecece;
   --u: var(--primary);
   --ud: var(--primary-dark);
   color-scheme: light dark;
@@ -27,28 +33,19 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #131f24;
-    --surface: #1a2a31;
-    --sunken: #0f191d;
-    --text: #f0f4f5;
-    --muted: #8fa1a8;
-    --line: #2d4049;
-    --primary: #8b82ff;
-    --primary-dark: #5f55d0;
-    --primary-soft: #2a2a55;
-    --ok: #46c878;
-    --ok-dark: #2c9455;
-    --ok-soft: #17382a;
-    --bad: #ff6b70;
-    --bad-dark: #c2444a;
-    --bad-soft: #3e1f24;
-    --gold: #f7b84a;
-    --gold-dark: #b9841f;
-    --blue: #55b4f5;
-    --locked: #2d4049;
-    --locked-dark: #1f2f36;
+    --surface: #131f24;
+    --sunken: #0f1a1f;
+    --text: #f1f7fb;
+    --muted: #8fa3ad;
+    --line: #37464f;
+    --primary-soft: #1f3a11;
+    --ok-soft: #1f3a11;
+    --bad-soft: #3d1d22;
+    --blue-soft: #10314a;
+    --locked: #37464f;
+    --locked-dark: #26343b;
   }
 }
-
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -159,7 +156,7 @@ p {
 .stat b {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--gold);
+  color: var(--orange);
 }
 
 .stat.gems b {
@@ -925,7 +922,7 @@ section:nth-of-type(even) .node:nth-child(5) {
 .option.sel,
 .tile.sel {
   border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 14%, var(--surface));
+  background: var(--blue-soft);
   box-shadow: 0 3px 0 var(--blue);
 }
 
@@ -2711,4 +2708,64 @@ section:nth-of-type(even) .buddy {
   .stat.quests.ready b {
     animation: none !important;
   }
+}
+/* ---------- Boca no ritmo da fala ----------
+   --mouth vai de 0 (fechada) a 1 (bem aberta), atualizada a cada quadro pelo audio.js
+   a partir do mapa de volume de cada áudio. */
+
+.char .mouth-talk {
+  transform-origin: 50% 0;
+}
+
+body.lipsync .char .mouth-talk {
+  animation: none;
+  transform: scaleY(calc(0.12 + var(--mouth, 0) * 1.05)) scaleX(calc(0.9 + var(--mouth, 0) * 0.2));
+}
+
+body.lipsync .char .head {
+  animation: none;
+  transform: rotate(calc(var(--mouth, 0) * 3deg)) translateY(calc(var(--mouth, 0) * -1.5px));
+}
+
+body.talking .char .arm-r {
+  transform: rotate(calc(var(--mouth, 0) * -16deg));
+  transition: transform 0.08s;
+}
+
+.owl .beak {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+
+body.lipsync .owl .beak {
+  animation: none;
+  transform: translateY(calc(var(--mouth, 0) * 5px)) scaleY(calc(1 + var(--mouth, 0) * 0.6));
+}
+
+.btn.ghost {
+  color: var(--blue);
+}
+
+.speak {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.listen .speak {
+  background: var(--blue);
+  box-shadow: 0 5px 0 var(--blue-dark);
+}
+
+.tag {
+  color: var(--primary-dark);
+}
+
+.flash .back {
+  color: var(--blue);
+}
+
+.unit h2,
+.unit small,
+.unit p {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
 }

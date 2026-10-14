@@ -70,7 +70,9 @@ function showProfile() {
       <button class="link" data-act="export">Salvar backup</button>
       <button class="link" data-act="restore">Restaurar backup</button>
       <button class="link danger" data-act="reset">Apagar tudo</button>
-    </div></div>`);
+    </div>
+    <p class="section-title">Créditos</p>
+    <div class="card"><p>Vozes geradas com o sintetizador Piper. Bia e Malu usam o LibriTTS-R (Koizumi et al., 2023), sob licença CC BY 4.0. Cora, Dona Rosa, Tom e Leo usam vozes em domínio público (LJ Speech, Kristin, Norman e Bryce).</p></div></div>`);
   $("#goal").onchange = (e) => {
     state.goal = Number(e.target.value);
     save();

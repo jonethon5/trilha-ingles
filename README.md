@@ -67,16 +67,36 @@ A comparação é feita no próprio aparelho, sem enviar a gravação a lugar ne
 
 **Limite importante:** a nota mede semelhança com o modelo em ritmo e em sons. Não é um avaliador de pronúncia treinado. Ela foi calibrada com vozes sintéticas (a mesma frase dita por outra voz fica em torno de 88; frases diferentes, em torno de 25), e em frases muito curtas a separação é fraca. Serve para acompanhar a evolução na mesma frase, não como veredito.
 
-## Áudio
+## Áudio e vozes
 
-Todas as frases, palavras e vocabulário do curso têm áudio gravado em `audio/` (1.268 arquivos, 5,8 MB), gerado com o sintetizador [Piper](https://github.com/rhasspy/piper) e a voz `en_US-ljspeech-medium`, treinada no LJ Speech Dataset, de domínio público. Para gerar de novo depois de mudar o conteúdo:
+Tudo o que é falado no app tem áudio gravado em `audio/` (1.268 arquivos, 5,7 MB), gerado no computador com o sintetizador [Piper](https://github.com/rhasspy/piper). Cada personagem tem a sua voz, definida em `js/voices.js`, e a tela mostra sempre o personagem dono da voz que está tocando:
+
+| Personagem | Voz | Licença |
+|---|---|---|
+| Cora (palavras soltas e sons) | `en_US-ljspeech-medium` | domínio público |
+| Bia | `en_US-libritts_r-medium`, voz 315 | CC BY 4.0 |
+| Malu | `en_US-libritts_r-medium`, voz 60 | CC BY 4.0 |
+| Dona Rosa | `en_US-kristin-medium` | domínio público |
+| Leo | `en_US-bryce-medium` | domínio público |
+| Tom | `en_US-norman-medium` | domínio público |
+
+As vozes foram escolhidas medindo o tom de cada uma (frequência fundamental), e a velocidade foi igualada para todas falarem no mesmo ritmo. Vozes com licença não comercial (como Ryan e HFC) ficaram de fora.
+
+Junto com cada áudio, a ferramenta grava um **mapa da boca**: o volume da fala 25 vezes por segundo. Enquanto o áudio toca, `js/audio.js` lê esse mapa e atualiza a variável CSS `--mouth`, e a boca do personagem abre e fecha no ritmo da fala.
+
+Para gerar de novo depois de mudar o conteúdo ou as vozes:
 
 ```bash
-PIPER=caminho/piper.exe VOICE=caminho/en_US-ljspeech-medium.onnx LAME=caminho/lame.exe node tools/make-audio.mjs
+PIPER=caminho/piper.exe VOICES=pasta/dos/modelos LAME=caminho/lame.exe node tools/make-audio.mjs
 ```
+
+Ao trocar vozes, aumente também `AUDIO_CACHE` em `sw.js`, porque os caminhos dos arquivos continuam os mesmos.
+
+O texto falado soma cerca de 18 mil caracteres. Por isso, trocar por uma voz paga (OpenAI, ElevenLabs, Azure) é um custo único e pequeno: o áudio é gerado uma vez e servido a todos os usuários.
 
 As frases cadastradas pelo usuário não têm gravação; o botão de ouvir usa a voz do aparelho quando ela está disponível.
 
+Crédito: LibriTTS-R, Y. Koizumi et al., 2023, licença [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 ## Dados
 
 O progresso fica no `localStorage` do aparelho. Não há servidor nem conta. Em **Perfil → Salvar backup** dá para exportar tudo em um arquivo.
@@ -95,6 +115,7 @@ node test/run.mjs    # testes
 | `js/course.js`, `js/speaking.js`, `js/words.js` | Conteúdo: curso, frases do treino de fala com IPA e baralho de palavras em contexto |
 | `js/stories.js`, `js/ipa.js` | Histórias com glossário, e os sons do inglês |
 | `js/characters.js`, `js/owl.js`, `js/fx.js` | Personagens, mascote e efeitos visuais |
+| `js/voices.js` | Voz de cada personagem e quem fala cada frase |
 | `js/srs.js` | Repetição espaçada |
 | `js/exercise.js` | Montagem e conferência dos exercícios |
 | `js/game.js` | XP, níveis, vidas, gemas, sequência, missões e conquistas |

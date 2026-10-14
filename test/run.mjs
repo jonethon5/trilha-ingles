@@ -17,6 +17,7 @@ import { SOUND_GROUPS, STRESS_MARKS, MINIMAL_PAIRS, extras, guideWords } from ".
 import { owl } from "../js/owl.js";
 import { STORIES, GLOSSARY, pieces } from "../js/stories.js";
 import { character, castFor, CAST_IDS } from "../js/characters.js";
+import { VOICES, speakerFor } from "../js/voices.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -361,7 +362,16 @@ test("personagens e coruja: cada um tem o seu desenho e as três expressões", (
 });
 
 test("todo texto falado tem o seu arquivo de áudio", () => {
-  const index = new Set(JSON.parse(readFileSync(join(root, "audio/index.json"), "utf8")));
+  const raw = JSON.parse(readFileSync(join(root, "audio/index.json"), "utf8"));
+  assert.equal(raw.version, 2);
+  const index = new Set(Object.keys(raw.files));
+  // Cada áudio tem a voz do personagem certo e um mapa da boca do tamanho da fala.
+  for (const [file, info] of Object.entries(raw.files)) {
+    assert.ok(/^[0-9]+$/.test(info.mouth) && info.mouth.length >= 5, `mapa da boca de ${file}`);
+    assert.ok(info.mouth.includes("9"), `${file}: o pico do volume vira 9`);
+  }
+  assert.equal(raw.files["s/u1-l1-s1.mp3"].voice, speakerFor("u1-l1-s1"));
+  assert.equal(raw.files["w/hello.mp3"].voice, "cora");
   const need = [];
   for (const lesson of lessons) {
     for (const s of lesson.sentences) {

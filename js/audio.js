@@ -12,6 +12,9 @@ effects.preload = "auto";
 let unlocked = false;
 let lastError = "";
 let files = new Set();
+let mouths = {}; // arquivo -> volume da fala, 25 vezes por segundo, em dígitos de 0 a 9
+let fps = 25;
+let currentFile = null;
 const base = new URL("../audio/", import.meta.url);
 
 // ---------- WAV gerado em memória (silêncio e efeitos) ----------
@@ -67,9 +70,38 @@ const SOUNDS = {
   streak: tones([[440, 0.08], [554, 0.08], [659, 0.08], [880, 0.26]], 0.22),
 };
 
-// Enquanto uma fala toca, o <body> ganha a classe "talking": é ela que faz a boca dos personagens mexer.
-for (const type of ["playing"]) voice.addEventListener(type, () => voice.src !== SOUNDS.silence && document.body.classList.add("talking"));
-for (const type of ["pause", "ended", "error", "emptied"]) voice.addEventListener(type, () => document.body.classList.remove("talking"));
+// ---------- Boca dos personagens ----------
+//
+// Enquanto uma fala toca, o <body> ganha a classe "talking" e a variável CSS --mouth (de 0 a 1),
+// lida do mapa de volume gravado junto com cada áudio. O CSS usa as duas para abrir e fechar a boca
+// no ritmo exato da fala. Sem mapa (voz sintética do aparelho), o CSS anima a boca sozinho.
+
+let mouthFrame = 0;
+
+function moveMouth() {
+  const map = currentFile && mouths[currentFile];
+  if (map) {
+    const digit = map.charCodeAt(Math.floor(voice.currentTime * fps)) - 48;
+    document.body.style.setProperty("--mouth", digit >= 0 && digit <= 9 ? (digit / 9).toFixed(2) : "0");
+  }
+  mouthFrame = requestAnimationFrame(moveMouth);
+}
+
+voice.addEventListener("playing", () => {
+  if (voice.src === SOUNDS.silence) return;
+  document.body.classList.add("talking");
+  document.body.classList.toggle("lipsync", Boolean(currentFile && mouths[currentFile]));
+  cancelAnimationFrame(mouthFrame);
+  moveMouth();
+});
+
+for (const type of ["pause", "ended", "error", "emptied"]) {
+  voice.addEventListener(type, () => {
+    cancelAnimationFrame(mouthFrame);
+    document.body.classList.remove("talking", "lipsync");
+    document.body.style.setProperty("--mouth", "0");
+  });
+}
 
 // ---------- Destravar no primeiro toque ----------
 
@@ -90,7 +122,10 @@ for (const type of ["touchend", "click", "keydown"]) document.addEventListener(t
 
 export async function loadIndex() {
   try {
-    files = new Set(await (await fetch(new URL("index.json", base))).json());
+    const index = await (await fetch(new URL("index.json", base))).json();
+    files = new Set(Object.keys(index.files));
+    mouths = Object.fromEntries(Object.entries(index.files).map(([file, info]) => [file, info.mouth]));
+    fps = index.fps || 25;
   } catch {
     files = new Set();
   }
@@ -130,6 +165,7 @@ export async function play(file, { slow = false } = {}) {
     const url = await blobUrl(file);
     if (id !== playId) return false; // outro som foi pedido enquanto este carregava
     voice.src = url;
+    currentFile = file;
     voice.defaultPlaybackRate = slow ? 0.7 : 1;
     voice.playbackRate = slow ? 0.7 : 1;
     await voice.play();
@@ -150,6 +186,7 @@ export async function fetchBytes(file) {
 
 export async function playBlob(blob) {
   playId++;
+  currentFile = null;
   voice.src = URL.createObjectURL(blob);
   voice.defaultPlaybackRate = 1;
   voice.playbackRate = 1;

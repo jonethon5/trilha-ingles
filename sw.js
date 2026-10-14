@@ -1,9 +1,10 @@
 // Service worker: guarda o app no aparelho para funcionar sem internet.
 // Ao mudar qualquer arquivo do app, aumente a versão para os aparelhos baixarem de novo.
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = `trilha-${VERSION}`;
 // Os áudios ficam em um cache próprio, que sobrevive às atualizações do app.
-const AUDIO_CACHE = "trilha-audio-v1";
+// Mude o número quando os áudios forem gerados de novo com vozes diferentes: os caminhos são os mesmos.
+const AUDIO_CACHE = "trilha-audio-v2";
 
 const FILES = [
   "./",
@@ -18,6 +19,7 @@ const FILES = [
   "js/ipa.js",
   "js/owl.js",
   "js/characters.js",
+  "js/voices.js",
   "js/stories.js",
   "js/fx.js",
   "js/srs.js",

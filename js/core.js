@@ -34,14 +34,14 @@ export const units = COURSE.units.map((unit, index) => ({
 }));
 
 const UNIT_COLORS = [
-  ["#5b4fe0", "#4337b8"],
-  ["#e0562f", "#b03d1b"],
-  ["#1f9d55", "#167a41"],
-  ["#d6408a", "#a82c69"],
-  ["#2a8fd6", "#1b6ca6"],
-  ["#c98a12", "#9a6808"],
-  ["#7a52cc", "#5b38a3"],
-  ["#1aa39a", "#107a73"],
+  ["#58cc02", "#58a700"],
+  ["#ce82ff", "#a568cc"],
+  ["#1cb0f6", "#1899d6"],
+  ["#ff9600", "#e07a00"],
+  ["#ff4b4b", "#ea2b2b"],
+  ["#00cd9c", "#00a47d"],
+  ["#ff86d0", "#e06bb3"],
+  ["#2b70c9", "#1f57a0"],
 ];
 export const unitColor = (index) => UNIT_COLORS[index % UNIT_COLORS.length];
 
