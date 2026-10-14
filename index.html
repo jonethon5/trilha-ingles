@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Trilha</title>
-    <meta name="description" content="Lições curtas de inglês com repetição espaçada. Funciona offline." />
-    <meta name="theme-color" content="#f6f6fb" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#111118" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Inglês em lições curtas, com repetição espaçada e treino de fala. Funciona offline." />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -20,14 +20,14 @@
     <div id="app">
       <main id="view"></main>
       <nav id="tabs">
-        <button data-act="tab" data-tab="path"><span>🧭</span>Trilha</button>
-        <button data-act="tab" data-tab="decks"><span>🗂️</span>Baralhos</button>
+        <button data-act="tab" data-tab="learn"><span>🏠</span>Aprender</button>
+        <button data-act="tab" data-tab="review"><span>🔁</span>Revisão</button>
+        <button data-act="tab" data-tab="speak"><span>🎙️</span>Falar</button>
+        <button data-act="tab" data-tab="quests"><span>🎯</span>Missões</button>
         <button data-act="tab" data-tab="profile"><span>👤</span>Perfil</button>
       </nav>
     </div>
-    <div id="overlay" hidden><div class="overlay-box"><div class="spinner"></div><p id="overlay-text"></p></div></div>
     <div id="toast" hidden></div>
-    <input id="file-apkg" type="file" hidden />
     <input id="file-backup" type="file" hidden />
     <script type="module" src="js/app.js"></script>
   </body>

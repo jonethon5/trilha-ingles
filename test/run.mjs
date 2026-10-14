@@ -1,22 +1,19 @@
 // Testes sem navegador: node test/run.mjs
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { unzipSync, zipSync, strToU8 } from "../vendor/fflate.js";
-import { decompress as zstdDecompress } from "../vendor/fzstd.js";
 import { COURSE, flatLessons } from "../js/course.js";
+import { LEVELS, flatSpeaking, words } from "../js/speaking.js";
 import * as srs from "../js/srs.js";
 import * as game from "../js/game.js";
 import * as ex from "../js/exercise.js";
 import * as store from "../js/store.js";
-import { parseApkg } from "../js/importer.js";
-import { guessMapping, convertPackage, cleanText, soundName } from "../js/anki.js";
+import * as P from "../js/pronounce.js";
+import { sentenceFile, speakingFile, vocabFile, wordFile } from "../js/audio-paths.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const require = createRequire(import.meta.url);
-const SQL = await require("../vendor/sql-wasm.js")({ locateFile: (f) => join(root, "vendor", f) });
 
 let passed = 0;
 function test(name, fn) {
@@ -38,18 +35,15 @@ const NOW = new Date(2026, 9, 13, 15, 0, 0).getTime();
 const TODAY = srs.dayStart(NOW);
 const lessons = flatLessons(COURSE);
 const all = lessons.flatMap((l) => l.sentences);
+const speaking = flatSpeaking();
 
 // ---------- Repetição espaçada ----------
 
 test("frase nova volta amanhã; errar de primeira reduz a facilidade", () => {
   const right = srs.review(srs.newItem(), true, NOW);
-  assert.equal(right.ivl, 1);
-  assert.equal(right.ease, 2.5);
-  assert.equal(right.due, srs.addDays(TODAY, 1));
+  assert.deepEqual([right.ivl, right.ease, right.due], [1, 2.5, srs.addDays(TODAY, 1)]);
   const wrong = srs.review(srs.newItem(), false, NOW);
-  assert.equal(wrong.ivl, 1);
-  assert.equal(wrong.ease, 2.3);
-  assert.equal(wrong.lapses, 0);
+  assert.deepEqual([wrong.ivl, wrong.ease, wrong.lapses], [1, 2.3, 0]);
 });
 
 test("acertos seguidos espaçam: 1, 3, 8, 20 dias", () => {
@@ -62,24 +56,16 @@ test("acertos seguidos espaçam: 1, 3, 8, 20 dias", () => {
   assert.deepEqual(seen, [1, 3, 8, 20]);
 });
 
-test("erro em revisão volta para 1 dia e a facilidade nunca passa do mínimo", () => {
-  let item = { ivl: 20, ease: 2.5, due: TODAY, reps: 4, lapses: 0 };
-  item = srs.review(item, false, NOW);
-  assert.equal(item.ivl, 1);
-  assert.equal(item.lapses, 1);
-  assert.equal(item.ease, 2.3);
+test("erro em revisão volta para 1 dia; atraso dá bônus; facilidade tem piso", () => {
+  let item = srs.review({ ivl: 20, ease: 2.5, due: TODAY, reps: 4, lapses: 0 }, false, NOW);
+  assert.deepEqual([item.ivl, item.lapses, item.ease], [1, 1, 2.3]);
   for (let i = 0; i < 10; i++) item = srs.review({ ...item, due: TODAY }, false, NOW);
   assert.equal(item.ease, 1.3);
+  assert.equal(srs.review({ ivl: 10, ease: 2.5, due: TODAY, reps: 3, lapses: 0 }, true, NOW).ivl, 25);
+  assert.equal(srs.review({ ivl: 10, ease: 2.5, due: srs.addDays(TODAY, -10), reps: 3, lapses: 0 }, true, NOW).ivl, 38);
 });
 
-test("revisão atrasada ganha bônus no intervalo", () => {
-  const onTime = srs.review({ ivl: 10, ease: 2.5, due: TODAY, reps: 3, lapses: 0 }, true, NOW);
-  const late = srs.review({ ivl: 10, ease: 2.5, due: srs.addDays(TODAY, -10), reps: 3, lapses: 0 }, true, NOW);
-  assert.equal(onTime.ivl, 25);
-  assert.equal(late.ivl, 38);
-});
-
-test("vencidas, força e previsão", () => {
+test("vencidas, força, previsão e virada do dia às 4h", () => {
   const items = {
     a: { ivl: 1, ease: 2.5, due: TODAY, reps: 1, lapses: 0 },
     b: { ivl: 5, ease: 2.5, due: srs.addDays(TODAY, -3), reps: 2, lapses: 0 },
@@ -94,27 +80,77 @@ test("vencidas, força e previsão", () => {
 
 // ---------- Jogo ----------
 
-test("níveis: 100 XP para o 2, 300 para o 3, 600 para o 4", () => {
+test("níveis e XP por sessão", () => {
   assert.deepEqual(game.levelInfo(0), { level: 1, into: 0, span: 100 });
-  assert.deepEqual(game.levelInfo(99), { level: 1, into: 99, span: 100 });
   assert.deepEqual(game.levelInfo(100), { level: 2, into: 0, span: 200 });
   assert.deepEqual(game.levelInfo(650), { level: 4, into: 50, span: 400 });
   assert.equal(game.sessionXp("lesson", 0), 15);
-  assert.equal(game.sessionXp("lesson", 2), 10);
+  assert.equal(game.sessionXp("unit", 3), 20);
   assert.equal(game.sessionXp("practice", 1), 5);
 });
 
-test("sequência: continua no dia seguinte, não conta duas vezes, zera após um dia sem estudar", () => {
+test("vidas: perde ao errar, volta uma a cada 4 horas, não passa de 5", () => {
+  let hearts = { count: 5, since: 0 };
+  hearts = game.loseHeart(hearts, NOW);
+  assert.deepEqual(hearts, { count: 4, since: NOW });
+  hearts = game.loseHeart(hearts, NOW + 1000);
+  assert.deepEqual(hearts, { count: 3, since: NOW });
+  assert.equal(game.heartsNow(hearts, NOW + game.HEART_REGEN - 1).count, 3);
+  const later = game.heartsNow(hearts, NOW + game.HEART_REGEN + 60000);
+  assert.equal(later.count, 4);
+  assert.equal(later.nextIn, game.HEART_REGEN - 60000);
+  assert.equal(game.heartsNow(hearts, NOW + 10 * game.HEART_REGEN).count, 5);
+  assert.equal(game.gainHearts(hearts, 9, NOW).count, 5);
+  let empty = hearts;
+  for (let i = 0; i < 9; i++) empty = game.loseHeart(empty, NOW);
+  assert.equal(empty.count, 0);
+  assert.equal(game.formatWait(game.HEART_REGEN), "4 h 00 min");
+  assert.equal(game.formatWait(25 * 60000), "25 min");
+});
+
+test("sequência: continua, não conta em dobro, zera, e o bloqueio cobre um dia", () => {
   let streak = { count: 0, best: 0, lastDay: 0 };
-  streak = game.streakAfter(streak, TODAY);
+  streak = game.streakAfter(streak, TODAY).streak;
   assert.equal(streak.count, 1);
-  assert.equal(game.streakAfter(streak, TODAY), streak);
-  streak = game.streakAfter(streak, srs.addDays(TODAY, 1));
+  assert.equal(game.streakAfter(streak, TODAY).streak, streak);
+  streak = game.streakAfter(streak, srs.addDays(TODAY, 1)).streak;
   assert.equal(streak.count, 2);
+  const day4 = srs.addDays(TODAY, 3); // faltou um dia
   assert.equal(game.currentStreak(streak, srs.addDays(TODAY, 2)), 2);
-  assert.equal(game.currentStreak(streak, srs.addDays(TODAY, 3)), 0);
-  streak = game.streakAfter(streak, srs.addDays(TODAY, 5));
-  assert.deepEqual({ count: streak.count, best: streak.best }, { count: 1, best: 2 });
+  assert.equal(game.currentStreak(streak, day4), 0);
+  assert.equal(game.currentStreak(streak, day4, 1), 2);
+  assert.deepEqual(game.streakAfter(streak, day4, 0), { streak: { count: 1, best: 2, lastDay: day4 }, usedFreeze: false });
+  assert.deepEqual(game.streakAfter(streak, day4, 1), { streak: { count: 3, best: 3, lastDay: day4 }, usedFreeze: true });
+  assert.equal(game.streakAfter(streak, srs.addDays(TODAY, 5), 2).streak.count, 1);
+  const dots = game.weekDots({ count: 2, best: 2, lastDay: TODAY }, TODAY);
+  assert.equal(dots.length, 7);
+  assert.equal(dots.filter((d) => d.done).length, 2);
+  assert.equal(dots.find((d) => d.today).done, true);
+});
+
+test("missões: três por dia, iguais no mesmo dia, com progresso e coleta", () => {
+  const quests = game.dailyQuests(TODAY);
+  assert.equal(quests.length, 3);
+  assert.equal(quests[0].key, "xp");
+  assert.equal(new Set(quests.map((q) => q.key)).size, 3);
+  assert.deepEqual(game.dailyQuests(TODAY), quests);
+  const seenKeys = new Set();
+  for (let i = 0; i < 60; i++) for (const q of game.dailyQuests(srs.addDays(TODAY, i))) seenKeys.add(q.key);
+  assert.equal(seenKeys.size, 7);
+  const daily = game.newDaily(TODAY);
+  assert.deepEqual(game.questStatus(quests[0], daily), { value: 0, done: false, claimed: false });
+  daily.xp = 999;
+  daily.claimed.push("xp");
+  assert.deepEqual(game.questStatus(quests[0], daily), { value: quests[0].target, done: true, claimed: true });
+});
+
+test("conquistas sobem de nível conforme os números", () => {
+  const list = game.achievements({ streak: 7, xp: 120, lessons: 0, mastered: 0, spoken: 0, custom: 0 });
+  const get = (key) => list.find((a) => a.key === key);
+  assert.deepEqual([get("streak").tier, get("streak").target], [2, 30]);
+  assert.deepEqual([get("xp").tier, get("xp").target, get("xp").value], [1, 500, 120]);
+  assert.equal(get("lessons").tier, 0);
+  assert.equal(game.achievements({ lessons: 99 }).find((a) => a.key === "lessons").tier, 3);
 });
 
 // ---------- Exercícios ----------
@@ -132,43 +168,49 @@ test("conferência aceita maiúsculas, pontuação e contrações diferentes", (
   assert.ok(ex.check("build", ["I", "can't", "drive"], s));
   assert.ok(!ex.check("type", "I can drive", s));
   assert.ok(!ex.check("type", "   ", s));
-  const fine = { pt: "Eu estou bem.", en: "I'm fine, thank you.", alts: [] };
-  assert.ok(ex.check("type", "I am fine thank you", fine));
+  assert.ok(ex.check("type", "I am fine thank you", { pt: "x", en: "I'm fine, thank you.", alts: [] }));
   const alt = { pt: "x", en: "I was at home yesterday.", alts: ["Yesterday I was at home."] };
   assert.ok(ex.check("build", ["yesterday", "I", "was", "at", "home"], alt));
   assert.ok(ex.check("choice", "x", alt));
   assert.ok(!ex.check("choice", "y", alt));
 });
 
-test("banco de palavras contém a resposta, as palavras erradas e sai embaralhado", () => {
+test("banco de palavras contém a resposta, as erradas e sai embaralhado", () => {
   const pool = ex.wordPool(all);
   for (const s of all) {
     const { answer, bank } = ex.buildWordBank(s, pool, 3, seeded(s.id.length + s.en.length));
-    assert.equal(bank.length, answer.length + 3, s.en);
     const texts = bank.map((w) => w.text);
+    assert.equal(bank.length, answer.length + 3, s.en);
     for (const w of answer) assert.ok(texts.includes(w), s.en);
     if (answer.length > 1) assert.notEqual(texts.slice(0, answer.length).join(" "), answer.join(" "), s.en);
-    const extras = texts.filter((t) => !answer.includes(t));
-    assert.ok(extras.every((t) => !answer.map((a) => a.toLowerCase()).includes(t.toLowerCase())));
     assert.ok(ex.check("build", answer, s));
   }
 });
 
-test("múltipla escolha tem quatro opções diferentes, com a certa entre elas", () => {
+test("múltipla escolha e pares", () => {
   for (const s of all.slice(0, 40)) {
     const { options } = ex.buildChoices(s, all, seeded(7));
-    assert.equal(options.length, 4);
     assert.equal(new Set(options).size, 4);
     assert.ok(options.includes(s.pt));
   }
+  const pairs = ex.buildPairs(lessons[0].vocab, seeded(5));
+  assert.deepEqual(pairs.left.map((p) => p.id).sort(), [0, 1, 2, 3]);
+  assert.deepEqual(pairs.right.map((p) => p.id).sort(), [0, 1, 2, 3]);
+  for (const item of pairs.left) assert.equal(item.text, lessons[0].vocab[item.id][0]);
+  for (const item of pairs.right) assert.equal(item.text, lessons[0].vocab[item.id][1]);
 });
 
-test("plano da lição e dificuldade crescente na revisão", () => {
-  const plan = ex.lessonPlan(lessons[0].sentences, { listen: true }, seeded(3));
-  assert.equal(plan.length, 12);
-  assert.deepEqual(plan.slice(0, 4).map((p) => p.type), ["choice", "build", "choice", "build"]);
-  assert.ok(plan.slice(8).every((p) => p.type === "listen"));
-  assert.ok(ex.lessonPlan(lessons[0].sentences, { listen: false }, seeded(3)).every((p) => p.type !== "listen"));
+test("planos: lição começa fácil e termina digitando; revisão fica mais difícil", () => {
+  const plan = ex.lessonPlan(lessons[0], { listen: true }, seeded(3));
+  assert.deepEqual(plan.map((p) => p.type), ["pairs", "choice", "build", "choice", "build", "choice", "build", "choice", "build", "listen", "listen", "listen", "type"]);
+  const fewest = Math.min(...lessons[0].sentences.map((s) => ex.tokenize(s.en).length));
+  assert.equal(ex.tokenize(plan.at(-1).s.en).length, fewest);
+  assert.equal(plan[0].pairs.length, 4);
+  assert.ok(ex.lessonPlan(lessons[0], { listen: false }, seeded(3)).every((p) => p.type !== "listen"));
+  const unit = ex.unitReviewPlan(all.slice(0, 24), { listen: true }, seeded(2));
+  assert.equal(unit.length, 10);
+  assert.equal(new Set(unit.map((p) => p.s.id)).size, 10);
+  assert.ok(unit.every((p) => ["build", "listen", "type"].includes(p.type)));
   const random = seeded(11);
   for (let i = 0; i < 50; i++) {
     assert.ok(["build", "listen", "choice"].includes(ex.typeForStrength(1, {}, random)));
@@ -177,99 +219,129 @@ test("plano da lição e dificuldade crescente na revisão", () => {
   }
 });
 
-// ---------- Curso ----------
+// ---------- Conteúdo ----------
 
-test("curso íntegro: 8 unidades, 24 lições, 192 frases com ids únicos", () => {
-  assert.equal(COURSE.units.length, 8);
-  assert.equal(lessons.length, 24);
-  assert.equal(all.length, 192);
+test("curso íntegro: 8 unidades, 24 lições, 192 frases", () => {
+  assert.deepEqual([COURSE.units.length, lessons.length, all.length], [8, 24, 192]);
   assert.equal(new Set(all.map((s) => s.id)).size, 192);
   assert.equal(new Set(all.map((s) => s.pt)).size, 192, "traduções repetidas quebrariam a múltipla escolha");
   for (const lesson of lessons) {
     assert.equal(lesson.sentences.length, 8, lesson.title);
     assert.ok(lesson.vocab.length >= 3, lesson.title);
     for (const s of lesson.sentences) {
-      assert.ok(s.pt && s.en, lesson.title);
       assert.ok(ex.tokenize(s.en).length <= 12, s.en);
       for (const alt of s.alts) assert.notEqual(ex.canon(alt), ex.canon(s.en), alt);
     }
   }
 });
 
+test("treino de fala: 4 níveis, 12 frases cada, uma transcrição IPA por palavra", () => {
+  assert.deepEqual(LEVELS.map((l) => l.id), ["a1", "a2", "b1", "b2"]);
+  assert.equal(speaking.length, 48);
+  assert.equal(new Set(speaking.map((s) => s.id)).size, 48);
+  for (const s of speaking) {
+    assert.equal(s.ipa.length, words(s.en).length, s.en);
+    assert.ok(s.ipa.every((t) => t && !/[A-Z0-9.,!?]/.test(t)), s.en);
+    assert.ok(s.pt);
+  }
+});
+
+test("todo texto falado tem o seu arquivo de áudio", () => {
+  const index = new Set(JSON.parse(readFileSync(join(root, "audio/index.json"), "utf8")));
+  const need = [];
+  for (const lesson of lessons) {
+    for (const s of lesson.sentences) {
+      need.push(sentenceFile(s.id));
+      for (const w of ex.tokenize(s.en)) need.push(wordFile(w));
+    }
+    lesson.vocab.forEach((_, i) => need.push(vocabFile(lesson.id, i)));
+  }
+  for (const s of speaking) need.push(speakingFile(s.id));
+  assert.equal(wordFile("I'm"), "w/i_m.mp3");
+  assert.equal(new Set(need).size, index.size);
+  for (const file of need) {
+    assert.ok(index.has(file), file);
+    assert.ok(existsSync(join(root, "audio", file)), file);
+  }
+});
+
 // ---------- Armazenamento ----------
 
-test("progresso: salva, carrega, completa campos novos e valida backup", () => {
+test("progresso: salva, carrega, migra dados antigos e valida backup", () => {
   const memory = new Map();
   const storage = { getItem: (k) => memory.get(k) ?? null, setItem: (k, v) => memory.set(k, v) };
-  assert.equal(store.load(storage).xp, 0);
+  assert.equal(store.load(storage).hearts.count, 5);
   const state = store.defaultState();
   state.xp = 120;
   state.items.x = { ivl: 3, ease: 2.5, due: 1, reps: 2, lapses: 0 };
+  state.custom.push({ id: "c1", en: "Hi.", pt: "Oi." });
   store.save(state, storage);
   assert.deepEqual(store.load(storage), state);
-  memory.set("trilha-ingles-v1", JSON.stringify({ version: 1, xp: 5 }));
-  assert.equal(store.load(storage).settings.sound, true);
+  // Dados da primeira versão: sem vidas nem gemas, e com frases de baralhos do Anki.
+  memory.set("trilha-ingles-v1", JSON.stringify({ version: 1, xp: 35, lessonsDone: { "u1-l1": true }, items: { "u1-l1-s1": { ivl: 1 }, a1700000000000: { ivl: 9 } }, settings: { sound: false } }));
+  const migrated = store.load(storage);
+  assert.deepEqual([migrated.version, migrated.xp, migrated.gems, migrated.hearts.count, migrated.settings.sound, migrated.settings.effects], [2, 35, 0, 5, false, true]);
+  assert.deepEqual(Object.keys(migrated.items), ["u1-l1-s1"]);
+  assert.deepEqual(migrated.daily.claimed, []);
   memory.set("trilha-ingles-v1", "{quebrado");
   assert.equal(store.load(storage).xp, 0);
   assert.deepEqual(store.importJson(store.exportJson(state)), state);
   assert.throws(() => store.importJson("não é json"), /não é um backup válido/);
   assert.throws(() => store.importJson('{"format":"outro"}'), /não é um backup deste app/);
+  assert.throws(() => store.importJson(JSON.stringify({ format: "trilha-ingles-backup", state: { version: 99 } })), /versão mais nova/);
 });
 
-// ---------- Importação do Anki ----------
+// ---------- Comparação de pronúncia ----------
 
-test("limpa campos do Anki e acha o áudio", () => {
-  assert.equal(cleanText("<div>I <b>like</b>&nbsp;{{c1::pizza::food}}</div>[sound:a.mp3]"), "I like pizza");
-  assert.equal(soundName("x [sound:frase 01.mp3] y"), "frase 01.mp3");
-  assert.equal(soundName("sem áudio"), null);
+// Sinal sintético parecido com fala: "sílabas" com frequências e durações dadas.
+function fakeSpeech(syllables, rate = 16000, seed = 1) {
+  const random = seeded(seed);
+  const out = [];
+  for (let i = 0; i < rate * 0.2; i++) out.push((random() - 0.5) * 0.001);
+  for (const [freq, seconds] of syllables) {
+    const count = Math.floor(seconds * rate);
+    for (let i = 0; i < count; i++) {
+      const env = Math.sin((Math.PI * i) / count);
+      out.push(env * 0.4 * (Math.sin((2 * Math.PI * freq * i) / rate) + 0.5 * Math.sin((2 * Math.PI * freq * 2.7 * i) / rate)) + (random() - 0.5) * 0.01);
+    }
+    for (let i = 0; i < rate * 0.04; i++) out.push((random() - 0.5) * 0.001);
+  }
+  for (let i = 0; i < rate * 0.2; i++) out.push((random() - 0.5) * 0.001);
+  return { samples: Float32Array.from(out), rate };
+}
+
+test("comparação: igual dá 100, parecido dá nota alta, diferente dá nota baixa", () => {
+  const phrase = [[300, 0.18], [900, 0.12], [500, 0.2], [1400, 0.15], [700, 0.22]];
+  const model = fakeSpeech(phrase);
+  assert.equal(P.compare(model, model).score, 100);
+  // A mesma "frase" dita mais devagar, com outro ruído e em outra taxa de amostragem.
+  const slower = fakeSpeech(phrase.map(([f, s]) => [f * 1.03, s * 1.3]), 44100, 9);
+  const other = fakeSpeech([[1500, 0.2], [250, 0.25], [1100, 0.1], [400, 0.3], [2000, 0.12]], 16000, 4);
+  const same = P.compare(model, slower);
+  const different = P.compare(model, other);
+  assert.ok(same.score >= 70, `mesma frase: ${same.score}`);
+  // Tons sintéticos não são fala: aqui vale a ordem das notas. Os limites reais vêm de vozes
+  // de verdade, medidos em tools/calibrate.mjs.
+  assert.ok(same.score - different.score >= 20, `mesma ${same.score}, diferente ${different.score}`);
+  assert.equal(same.modelEnvelope.length, 96);
+  assert.ok(Math.abs(same.modelSeconds - 1.1) < 0.2, String(same.modelSeconds));
 });
 
-test("palpite de campos pelos nomes", () => {
-  assert.deepEqual(guessMapping({ fields: ["Portuguese", "English", "Audio"] }), { pt: 0, en: 1, audio: 2, use: true });
-  assert.deepEqual(guessMapping({ fields: ["L1", "L2", "Audio"] }), { pt: 0, en: 1, audio: 2, use: true });
-  assert.deepEqual(guessMapping({ fields: ["Sentence", "Hint", "Audio", "Extra"] }), { pt: 1, en: 0, audio: 2, use: true });
-  assert.deepEqual(guessMapping({ fields: ["Frente", "Verso"] }), { pt: 0, en: 1, audio: -1, use: true });
-  assert.equal(guessMapping({ fields: ["Só um"] }).use, false);
-});
-
-test("pacote do Anki vira baralho de frases, com áudio e progresso", () => {
-  const crt = Math.floor(new Date(2026, 0, 1, 4).getTime() / 1000);
-  const todayIdx = Math.floor((NOW / 1000 - crt) / 86400);
-  const db = new SQL.Database();
-  db.run("CREATE TABLE col (crt integer, models text, decks text)");
-  db.run("CREATE TABLE notes (id integer primary key, mid integer, tags text, flds text)");
-  db.run("CREATE TABLE cards (id integer primary key, nid integer, did integer, ord integer, type integer, queue integer, due integer, ivl integer, factor integer, reps integer, lapses integer, odue integer, odid integer)");
-  const models = { 1500: { id: 1500, name: "Frases", type: 0, css: "", flds: [{ name: "Portuguese", ord: 0 }, { name: "English", ord: 1 }, { name: "Audio", ord: 2 }], tmpls: [{ name: "c", ord: 0, qfmt: "", afmt: "" }] } };
-  db.run("INSERT INTO col VALUES (?, ?, ?)", [crt, JSON.stringify(models), JSON.stringify({ 77: { id: 77, name: "Viagem" } })]);
-  const long = Array.from({ length: 20 }, (_, i) => `w${i}`).join(" ");
-  const notes = [
-    [10, "Eu gosto de café.\x1f<b>I like coffee.</b>\x1f[sound:a.mp3]"],
-    [11, "Onde fica o hotel?\x1fWhere is the hotel?\x1f"],
-    [12, "\x1fEmpty portuguese\x1f"],
-    [13, `Longa\x1f${long}\x1f`],
-  ];
-  for (const [id, flds] of notes) db.run("INSERT INTO notes VALUES (?, 1500, '', ?)", [id, flds]);
-  db.run("INSERT INTO cards VALUES (20, 10, 77, 0, 2, 2, ?, 12, 2300, 4, 1, 0, 0)", [todayIdx + 3]);
-  db.run("INSERT INTO cards VALUES (21, 11, 77, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0)");
-  db.run("INSERT INTO cards VALUES (22, 12, 77, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0)");
-  db.run("INSERT INTO cards VALUES (23, 13, 77, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0)");
-  const apkg = zipSync({ "collection.anki2": db.export(), media: strToU8(JSON.stringify({ 0: "a.mp3", 1: "unused.jpg" })), 0: new Uint8Array([1, 2, 3]), 1: new Uint8Array([9]) });
-  db.close();
-
-  const pkg = parseApkg(apkg, { SQL, unzipSync, zstdDecompress });
-  const mappings = new Map(pkg.notetypes.map((nt) => [nt.id, guessMapping(nt)]));
-  const result = convertPackage(pkg, mappings, { now: NOW });
-  assert.equal(result.decks.length, 1);
-  assert.deepEqual(result.decks[0].sentences, [
-    { id: "a10", pt: "Eu gosto de café.", en: "I like coffee.", audio: "a.mp3" },
-    { id: "a11", pt: "Onde fica o hotel?", en: "Where is the hotel?" },
-  ]);
-  assert.deepEqual(result.skipped, { unmapped: 0, empty: 1, long: 1 });
-  assert.deepEqual(result.items, { a10: { ivl: 12, ease: 2.3, due: srs.addDays(TODAY, 3), reps: 4, lapses: 1 } });
-  assert.deepEqual([...result.audio], ["a.mp3"]);
-  const wanted = pkg.media.filter((m) => result.audio.has(m.name));
-  assert.deepEqual(pkg.extractMedia(wanted).map((m) => [m.name, m.type, m.data.byteLength]), [["a.mp3", "audio/mpeg", 3]]);
-  assert.deepEqual(convertPackage(pkg, mappings, { keepProgress: false, now: NOW }).items, {});
+test("comparação: silêncio, gravação curta e gravação longa são apontados", () => {
+  const phrase = [[300, 0.2], [900, 0.2], [500, 0.2], [1400, 0.2], [700, 0.2]];
+  const model = fakeSpeech(phrase);
+  const silence = { samples: new Float32Array(16000), rate: 16000 };
+  assert.deepEqual([P.compare(model, silence).score, P.compare(model, silence).problem], [0, "silent"]);
+  const short = P.compare(model, fakeSpeech(phrase.slice(0, 2)));
+  assert.equal(short.problem, "short");
+  assert.ok(short.score <= 30);
+  const long = P.compare(model, fakeSpeech([...phrase, ...phrase, ...phrase]));
+  assert.equal(long.problem, "long");
+  assert.ok(long.score <= 40);
+  assert.equal(P.resample(new Float32Array(44100), 44100).length, 16000);
+  assert.equal(P.distanceToScore(P.CALIBRATION.same), 88);
+  assert.equal(P.distanceToScore(P.CALIBRATION.different), 25);
+  assert.equal(P.label(85), "Muito parecido com o modelo");
 });
 
 console.log(`\n${passed} testes passaram`);

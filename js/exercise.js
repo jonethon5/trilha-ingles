@@ -1,10 +1,11 @@
-// Os quatro tipos de exercício: como cada um é montado e como a resposta é conferida.
+// Os tipos de exercício: como cada um é montado e como a resposta é conferida.
+//   pairs:  ligar cada palavra em inglês à tradução (usa o vocabulário da lição)
 //   choice: ver a frase em inglês e escolher a tradução entre quatro opções
 //   build:  ver a frase em português e montar a frase em inglês com um banco de palavras
 //   listen: ouvir a frase e montar o que ouviu
 //   type:   ver a frase em português e digitar a frase em inglês
 
-export const TYPES = ["choice", "build", "listen", "type"];
+export const TYPES = ["pairs", "choice", "build", "listen", "type"];
 
 // A primeira palavra perde a maiúscula para não entregar o começo da frase, exceto "I" e nomes próprios.
 const KEEP_CAPITAL = /^(I(['’].*)?|English|Brazil|London|Ana|Monday|Friday|TV)$/;
@@ -98,17 +99,38 @@ export function buildChoices(sentence, others, random = Math.random) {
   return { options: shuffle([sentence.pt, ...wrong], random) };
 }
 
-// Lição nova: primeiro todas as frases em exercícios fáceis, depois metade delas de ouvido.
-export function lessonPlan(sentences, { listen = true } = {}, random = Math.random) {
-  const first = sentences.map((s, i) => ({ s, type: i % 2 === 0 ? "choice" : "build" }));
-  const again = sample(sentences, Math.ceil(sentences.length / 2), random).map((s) => ({
-    s,
-    type: listen ? "listen" : "build",
-  }));
-  return [...first, ...again];
+// Duas colunas embaralhadas para o exercício de ligar pares. O id é o índice do par.
+export function buildPairs(pairs, random = Math.random) {
+  const side = (index) => shuffle(pairs.map((pair, id) => ({ id, text: pair[index] })), random);
+  return { left: side(0), right: side(1) };
 }
 
-// Revisão: quanto mais firme a frase está na memória (força 0 a 4), mais difícil o exercício.
+const wordCount = (s) => tokenize(s.en).length;
+
+// Lição nova, do mais fácil para o mais difícil: ligar o vocabulário, reconhecer e montar cada frase,
+// ouvir três delas e, por fim, digitar a mais curta.
+export function lessonPlan(lesson, { listen = true } = {}, random = Math.random) {
+  const { sentences, vocab = [] } = lesson;
+  const plan = [];
+  if (vocab.length >= 2) plan.push({ type: "pairs", pairs: vocab.slice(0, 5) });
+  sentences.forEach((s, i) => plan.push({ s, type: i % 2 === 0 ? "choice" : "build" }));
+  for (const s of sample(sentences, Math.min(3, sentences.length), random)) {
+    plan.push({ s, type: listen ? "listen" : "build" });
+  }
+  if (sentences.length) {
+    const shortest = [...sentences].sort((a, b) => wordCount(a) - wordCount(b))[0];
+    plan.push({ s: shortest, type: "type" });
+  }
+  return plan;
+}
+
+// Revisão de unidade: dez frases da unidade, alternando os exercícios mais difíceis.
+export function unitReviewPlan(sentences, { listen = true } = {}, random = Math.random) {
+  const cycle = listen ? ["build", "listen", "type", "listen"] : ["build", "type"];
+  return sample(sentences, Math.min(10, sentences.length), random).map((s, i) => ({ s, type: cycle[i % cycle.length] }));
+}
+
+// Revisão espaçada: quanto mais firme a frase está na memória (força 0 a 4), mais difícil o exercício.
 export function typeForStrength(strength, { listen = true } = {}, random = Math.random) {
   let options;
   if (strength <= 1) options = ["build", "listen", "choice"];

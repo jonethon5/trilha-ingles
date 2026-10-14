@@ -1,32 +1,49 @@
 // Progresso do usuário, guardado no localStorage do aparelho como um único JSON.
 
+import { MAX_HEARTS, newDaily } from "./game.js";
+
 const KEY = "trilha-ingles-v1";
 const FORMAT = "trilha-ingles-backup";
+const VERSION = 2;
 
 export function defaultState() {
   return {
-    version: 1,
+    version: VERSION,
     xp: 0,
+    gems: 0,
+    hearts: { count: MAX_HEARTS, since: 0 },
+    freezes: 0, // bloqueios de sequência comprados na loja
     goal: 20, // meta diária de XP
-    daily: { day: 0, xp: 0 },
+    daily: newDaily(0), // contadores do dia, usados pela meta e pelas missões
     streak: { count: 0, best: 0, lastDay: 0 },
-    lessonsDone: {}, // id da lição -> true
+    lessonsDone: {}, // id da lição ou da revisão de unidade -> true
+    chests: {}, // id da unidade -> true quando o baú foi aberto
     items: {}, // id da frase -> agendamento (ver srs.js)
-    settings: { sound: true },
+    custom: [], // frases cadastradas pelo usuário: { id, en, pt }
+    speak: { level: "a1", goal: 3, history: {} }, // history: id da frase -> [{ t, score }]
+    settings: { sound: true, effects: true },
   };
 }
 
-// Completa com os valores padrão o que faltar, para dados antigos continuarem válidos.
+// Completa com os valores padrão o que faltar, para dados de versões antigas continuarem válidos.
 function merge(saved) {
   const base = defaultState();
+  const items = { ...saved.items };
+  // A versão 1 importava baralhos do Anki; essas frases não existem mais no app.
+  for (const id of Object.keys(items)) if (/^a\d+$/.test(id)) delete items[id];
   return {
     ...base,
     ...saved,
-    daily: { ...base.daily, ...saved.daily },
+    version: VERSION,
+    hearts: { ...base.hearts, ...saved.hearts },
+    daily: { ...base.daily, ...saved.daily, claimed: [...(saved.daily?.claimed || [])] },
     streak: { ...base.streak, ...saved.streak },
     settings: { ...base.settings, ...saved.settings },
+    speak: { ...base.speak, ...saved.speak, history: { ...saved.speak?.history } },
     lessonsDone: { ...saved.lessonsDone },
-    items: { ...saved.items },
+    chests: { ...saved.chests },
+    custom: [...(saved.custom || [])],
+    items,
   };
 }
 
@@ -57,6 +74,6 @@ export function importJson(text) {
   if (data?.format !== FORMAT || typeof data.state !== "object" || data.state === null) {
     throw new Error("O arquivo não é um backup deste app.");
   }
-  if (data.state.version !== 1) throw new Error("Backup de uma versão mais nova do app.");
+  if (!(data.state.version <= VERSION)) throw new Error("Backup de uma versão mais nova do app.");
   return merge(data.state);
 }
