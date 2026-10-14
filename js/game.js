@@ -12,6 +12,46 @@ export const SHOP = { refill: { cost: 40 }, freeze: { cost: 30, max: 2 } };
 export const CHEST_GEMS = 20;
 export const LEVEL_UP_GEMS = 10;
 
+// ---------- Plano de estudo (vem das respostas da primeira abertura) ----------
+
+export const REASONS = [
+  { id: "work", icon: "💼", text: "Trabalho e carreira" },
+  { id: "travel", icon: "✈️", text: "Viajar" },
+  { id: "study", icon: "🎓", text: "Estudos" },
+  { id: "people", icon: "💬", text: "Conversar com pessoas" },
+  { id: "fun", icon: "🎬", text: "Filmes, séries e jogos" },
+  { id: "self", icon: "🌱", text: "Desenvolvimento pessoal" },
+];
+
+// Cada nível declarado define em que unidade a trilha começa e o nível inicial do treino de fala.
+export const SKILLS = [
+  { id: "a1", icon: "🌱", text: "Estou começando do zero", startUnit: 0 },
+  { id: "a2", icon: "🙂", text: "Sei palavras e frases soltas", startUnit: 2 },
+  { id: "b1", icon: "😀", text: "Consigo conversas simples", startUnit: 4 },
+  { id: "b2", icon: "😎", text: "Falo sobre vários assuntos", startUnit: 6 },
+];
+
+// Quanto tempo a pessoa tem por dia define a meta de XP, as palavras novas e as frases de fala.
+export const PACES = [
+  { minutes: 5, name: "Casual", goal: 10, wordsPerDay: 1, speakGoal: 1 },
+  { minutes: 10, name: "Regular", goal: 20, wordsPerDay: 2, speakGoal: 3 },
+  { minutes: 15, name: "Sério", goal: 30, wordsPerDay: 3, speakGoal: 5 },
+  { minutes: 20, name: "Intenso", goal: 50, wordsPerDay: 4, speakGoal: 5 },
+];
+
+export function planFor(minutes, skill) {
+  const pace = PACES.find((p) => p.minutes === minutes) || PACES[1];
+  const level = SKILLS.find((s) => s.id === skill) || SKILLS[0];
+  return { goal: pace.goal, wordsPerDay: pace.wordsPerDay, speakGoal: pace.speakGoal, startUnit: level.startUnit, speakLevel: level.id };
+}
+
+// Cartões próprios liberam depois de uma base de palavras, ou de cara para quem já tem nível.
+export const CUSTOM_UNLOCK_WORDS = 20;
+
+export function customUnlocked(wordsLearned, skill) {
+  return wordsLearned >= CUSTOM_UNLOCK_WORDS || skill === "b1" || skill === "b2";
+}
+
 // ---------- XP e níveis ----------
 
 // XP total necessário para ALCANÇAR um nível: 0, 100, 300, 600, 1000...

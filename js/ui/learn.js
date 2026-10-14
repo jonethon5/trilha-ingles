@@ -1,6 +1,6 @@
 // Aba Aprender: a trilha de unidades, com lições, baús e revisão de unidade. Também a loja.
 
-import { h, app, actions, tabViews, show, save, toast, topBar, barHtml, lessons, units, unitColor, hearts, daily, dueIds, freshCustom, canListen, playFile, openTab, effect, game, ex } from "../core.js";
+import { h, app, actions, tabViews, show, save, toast, topBar, barHtml, lessons, units, unitColor, hearts, daily, todayCards, canListen, playFile, openTab, effect, game, ex } from "../core.js";
 import { vocabFile } from "../audio-paths.js";
 import { startSession } from "./session.js";
 
@@ -11,11 +11,23 @@ function gates() {
   return units.flatMap((unit) => [...unit.lessons.map((l) => l.id), unit.reviewId]);
 }
 
-function gateStatus(id) {
-  if (done(id)) return "done";
+// Quem declarou já saber inglês começa mais adiante: as unidades anteriores ficam abertas, sem ordem.
+function unlocked(id) {
   const order = gates();
   const index = order.indexOf(id);
-  return index === 0 || done(order[index - 1]) ? "next" : "locked";
+  if (index === 0 || done(order[index - 1])) return true;
+  const unit = units.find((u) => u.reviewId === id || u.lessons.some((l) => l.id === id));
+  const start = app.state.profile.startUnit;
+  return unit.index < start || (unit.index === start && id === unit.lessons[0].id);
+}
+
+// "next" é a lição da vez (ganha o balão "Começar"); "open" está liberada, mas não é a da vez.
+function gateStatus(id) {
+  if (done(id)) return "done";
+  if (!unlocked(id)) return "locked";
+  const start = app.state.profile.startUnit;
+  const current = gates().find((g) => !done(g) && unlocked(g) && units.find((u) => u.reviewId === g || u.lessons.some((l) => l.id === g)).index >= start);
+  return id === current ? "next" : "open";
 }
 
 function chestStatus(unit) {
@@ -30,7 +42,7 @@ function node({ status, act, data, icon, label, cls = "" }) {
 
 function unitHtml(unit) {
   const [color, dark] = unitColor(unit.index);
-  const icons = { done: "✓", next: "★", locked: "🔒" };
+  const icons = { done: "✓", next: "★", open: "★", locked: "🔒" };
   const lessonNode = (lesson) => {
     const status = gateStatus(lesson.id);
     return node({ status, act: "open-lesson", data: `data-i="${lessons.indexOf(lesson)}"`, icon: icons[status], label: lesson.title });
@@ -68,9 +80,10 @@ function goalCard() {
 }
 
 function reviewNudge() {
-  const count = dueIds().length + freshCustom().length;
+  const { due, fresh } = todayCards();
+  const count = due.length + fresh.length;
   if (!count) return "";
-  return `<button class="card nudge" data-act="tab" data-tab="review"><span>🔁</span><div><h3>${count} ${count === 1 ? "frase para revisar" : "frases para revisar"}</h3><p>Revisar hoje evita esquecer.</p></div><b>›</b></button>`;
+  return `<button class="card nudge" data-act="tab" data-tab="review"><span>🔁</span><div><h3>${count} ${count === 1 ? "cartão para hoje" : "cartões para hoje"}</h3><p>Revisões e palavras novas, na aba Revisão.</p></div><b>›</b></button>`;
 }
 
 function showLearn() {

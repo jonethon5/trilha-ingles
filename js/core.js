@@ -6,7 +6,8 @@ import * as game from "./game.js";
 import * as ex from "./exercise.js";
 import * as store from "./store.js";
 import * as audio from "./audio.js";
-import { sentenceFile, wordFile } from "./audio-paths.js";
+import { contextFile, sentenceFile, wordFile } from "./audio-paths.js";
+import { WORDS } from "./words.js";
 
 export const $ = (sel, el = document) => el.querySelector(sel);
 export const h = (text) => String(text).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
@@ -20,6 +21,8 @@ export const app = { state: store.load(), tab: "learn", session: null };
 // Cada tela registra aqui as suas ações; o atributo data-act dos botões diz qual chamar.
 export const actions = {};
 export const tabViews = {};
+// Ganchos opcionais: afterTab(nome) roda depois de desenhar uma aba; leaveTabs() ao sair delas.
+export const hooks = { afterTab: null, leaveTabs: null };
 
 export const lessons = flatLessons(COURSE);
 export const units = COURSE.units.map((unit, index) => ({
@@ -54,6 +57,14 @@ export function indexContent() {
       const file = sentenceFile(s.id);
       s.audio = audio.has(file) ? file : null;
       byId.set(s.id, s);
+    }
+  }
+  for (const word of WORDS) {
+    for (const card of word.cards) {
+      const file = contextFile(card.id);
+      card.audio = audio.has(file) ? file : null;
+      card.alts = [];
+      byId.set(card.id, card);
     }
   }
   for (const s of app.state.custom) byId.set(s.id, { ...s, alts: [], audio: null, custom: true });
@@ -94,9 +105,38 @@ export function dueIds() {
   return srs.dueIds(app.state.items).filter((id) => byId.has(id));
 }
 
-// Frases cadastradas pelo usuário que ainda não entraram na revisão.
-export function freshCustom() {
-  return app.state.custom.filter((s) => srs.isNew(app.state.items[s.id])).map((s) => s.id);
+const seen = (id) => !srs.isNew(app.state.items[id]);
+
+// Palavras do baralho cujas cinco frases já foram vistas.
+export function wordsLearned() {
+  return WORDS.filter((word) => word.cards.every((card) => seen(card.id))).length;
+}
+
+export function customUnlocked() {
+  return game.customUnlocked(wordsLearned(), app.state.profile.skill);
+}
+
+// Os cartões de hoje: os que venceram e os novos. Novos são as frases das palavras do dia
+// (até o limite de palavras por dia do plano), mais os cartões próprios ainda não vistos.
+// Palavra começada em outro dia e não terminada entra sempre, sem gastar o limite.
+export function todayCards() {
+  const state = app.state;
+  const today = srs.dayStart();
+  let budget = state.profile.wordsPerDay - Object.values(state.words).filter((day) => day === today).length;
+  const fresh = [];
+  const newWords = [];
+  for (const word of WORDS) {
+    const unseen = word.cards.filter((card) => !seen(card.id));
+    if (!unseen.length) continue;
+    if (!(word.id in state.words)) {
+      if (budget <= 0) continue;
+      budget--;
+      newWords.push(word.id);
+    }
+    fresh.push(...unseen.map((card) => card.id));
+  }
+  for (const s of state.custom) if (!seen(s.id)) fresh.push(s.id);
+  return { due: dueIds(), fresh, newWords };
 }
 
 // Soma XP e devolve as recompensas que isso gerou.
@@ -156,6 +196,7 @@ export function toast(message, ms = 2400) {
 export function show(html, { showTabs = true } = {}) {
   view.innerHTML = html;
   tabs.hidden = !showTabs;
+  if (!showTabs) hooks.leaveTabs?.();
   for (const btn of tabs.querySelectorAll("button")) btn.classList.toggle("on", btn.dataset.tab === app.tab);
 }
 
@@ -166,6 +207,7 @@ export function openTab(name = app.tab) {
   app.session = null;
   audio.stop();
   tabViews[name]();
+  hooks.afterTab?.(name);
 }
 
 export function barHtml(fraction, cls = "") {

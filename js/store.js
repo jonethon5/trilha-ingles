@@ -4,7 +4,7 @@ import { MAX_HEARTS, newDaily } from "./game.js";
 
 const KEY = "trilha-ingles-v1";
 const FORMAT = "trilha-ingles-backup";
-const VERSION = 2;
+const VERSION = 3;
 
 export function defaultState() {
   return {
@@ -21,6 +21,10 @@ export function defaultState() {
     items: {}, // id da frase -> agendamento (ver srs.js)
     custom: [], // frases cadastradas pelo usuário: { id, en, pt }
     speak: { level: "a1", goal: 3, history: {} }, // history: id da frase -> [{ t, score }]
+    // Respostas da primeira abertura e o plano que saiu delas.
+    profile: { onboarded: false, reason: null, skill: "a1", minutes: 10, wordsPerDay: 2, startUnit: 0 },
+    words: {}, // id da palavra -> dia em que ela foi começada, para limitar as palavras novas por dia
+    tour: {}, // aba -> true depois que a coruja já explicou
     settings: { sound: true, effects: true },
   };
 }
@@ -40,6 +44,9 @@ function merge(saved) {
     streak: { ...base.streak, ...saved.streak },
     settings: { ...base.settings, ...saved.settings },
     speak: { ...base.speak, ...saved.speak, history: { ...saved.speak?.history } },
+    profile: { ...base.profile, ...saved.profile },
+    words: { ...saved.words },
+    tour: { ...saved.tour },
     lessonsDone: { ...saved.lessonsDone },
     chests: { ...saved.chests },
     custom: [...(saved.custom || [])],

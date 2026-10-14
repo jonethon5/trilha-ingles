@@ -11,7 +11,10 @@ import * as game from "../js/game.js";
 import * as ex from "../js/exercise.js";
 import * as store from "../js/store.js";
 import * as P from "../js/pronounce.js";
-import { sentenceFile, speakingFile, vocabFile, wordFile } from "../js/audio-paths.js";
+import { contextFile, sentenceFile, speakingFile, vocabFile, wordFile } from "../js/audio-paths.js";
+import { WORDS, highlight, CONTEXTS_PER_WORD } from "../js/words.js";
+import { IPA_GUIDE, guideWords } from "../js/ipa.js";
+import { owl } from "../js/owl.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -78,7 +81,38 @@ test("vencidas, força, previsão e virada do dia às 4h", () => {
   assert.equal(srs.dayStart(new Date(2026, 9, 13, 5).getTime()) - srs.dayStart(new Date(2026, 9, 13, 3).getTime()), srs.DAY);
 });
 
+test("flashcard: os quatro botões dão intervalos crescentes e ajustam a facilidade", () => {
+  const fresh = [srs.AGAIN, srs.HARD, srs.GOOD, srs.EASY].map((r) => srs.rate(srs.newItem(), r, NOW));
+  assert.deepEqual(fresh.map((i) => i.ivl), [1, 1, 1, 3]);
+  assert.deepEqual(fresh.map((i) => i.ease), [2.3, 2.35, 2.5, 2.65]);
+  const card = { ivl: 10, ease: 2.5, due: TODAY, reps: 3, lapses: 0 };
+  const [again, hard, good, easy] = [srs.AGAIN, srs.HARD, srs.GOOD, srs.EASY].map((r) => srs.rate(card, r, NOW));
+  assert.deepEqual([again.ivl, hard.ivl, good.ivl, easy.ivl], [1, 12, 25, 33]);
+  assert.deepEqual([again.ease, hard.ease, good.ease, easy.ease], [2.3, 2.35, 2.5, 2.65]);
+  assert.deepEqual([again.lapses, hard.lapses], [1, 0]);
+  assert.equal(easy.due, srs.addDays(TODAY, 33));
+  // Mesmo com a facilidade no piso, "Bom" nunca empata com "Difícil".
+  const stiff = { ivl: 2, ease: 1.3, due: TODAY, reps: 5, lapses: 4 };
+  assert.ok(srs.rate(stiff, srs.GOOD, NOW).ivl > srs.rate(stiff, srs.HARD, NOW).ivl);
+  assert.deepEqual(srs.review(card, true, NOW), good);
+  assert.deepEqual(srs.review(card, false, NOW), again);
+  assert.equal(srs.intervalLabel(undefined, srs.EASY, NOW), "3 d");
+  assert.equal(srs.intervalLabel(card, srs.GOOD, NOW), "25 d");
+  assert.equal(srs.intervalLabel({ ...card, ivl: 30 }, srs.GOOD, NOW), "2,5 mês");
+});
+
 // ---------- Jogo ----------
+
+test("plano de estudo sai do tempo disponível e do nível declarado", () => {
+  assert.deepEqual(game.planFor(5, "a1"), { goal: 10, wordsPerDay: 1, speakGoal: 1, startUnit: 0, speakLevel: "a1" });
+  assert.deepEqual(game.planFor(20, "b1"), { goal: 50, wordsPerDay: 4, speakGoal: 5, startUnit: 4, speakLevel: "b1" });
+  assert.deepEqual(game.planFor(999, "nada"), game.planFor(10, "a1"));
+  assert.ok(game.SKILLS.every((s) => s.startUnit < COURSE.units.length));
+  assert.equal(game.customUnlocked(19, "a1"), false);
+  assert.equal(game.customUnlocked(20, "a1"), true);
+  assert.equal(game.customUnlocked(0, "a2"), false);
+  assert.equal(game.customUnlocked(0, "b1"), true);
+});
 
 test("níveis e XP por sessão", () => {
   assert.deepEqual(game.levelInfo(0), { level: 1, into: 0, span: 100 });
@@ -246,6 +280,42 @@ test("treino de fala: 4 níveis, 12 frases cada, uma transcrição IPA por palav
   }
 });
 
+test("baralho de palavras: 50 palavras, 5 frases cada, com a palavra dentro da frase", () => {
+  assert.equal(WORDS.length, 50);
+  assert.equal(new Set(WORDS.map((w) => w.id)).size, 50);
+  const cards = WORDS.flatMap((w) => w.cards);
+  assert.equal(cards.length, 250);
+  assert.equal(new Set(cards.map((c) => c.id)).size, 250);
+  for (const word of WORDS) {
+    assert.equal(word.cards.length, CONTEXTS_PER_WORD, word.id);
+    assert.ok(word.forms.includes(word.word), word.id);
+    for (const card of word.cards) {
+      assert.ok(card.pt && card.en, card.id);
+      assert.ok(highlight(word, card.en).some((p) => p.hit), `"${card.en}" não contém ${word.word}`);
+      assert.equal(highlight(word, card.en).map((p) => p.text).join(""), card.en);
+      assert.ok(ex.tokenize(card.en).length <= 9, card.en);
+    }
+  }
+  // Nenhuma frase repetida entre o baralho e o curso: cada cartão é um conteúdo novo.
+  const seen = new Set(all.map((s) => ex.canon(s.en)));
+  for (const card of cards) {
+    assert.ok(!seen.has(ex.canon(card.en)), `repetida: ${card.en}`);
+    seen.add(ex.canon(card.en));
+  }
+  assert.deepEqual(highlight(WORDS.find((w) => w.id === "let"), "Let's go home."), [{ text: "Let's", hit: true }, { text: " go home.", hit: false }]);
+});
+
+test("guia de sons cobre todos os símbolos usados nas transcrições", () => {
+  const symbols = IPA_GUIDE.flatMap((g) => g.sounds.map(([symbol]) => symbol));
+  assert.equal(new Set(symbols).size, symbols.length);
+  // Letras que soam como em português não precisam de explicação.
+  const plain = new Set("bdfɡklmnpstvz");
+  const explained = new Set(symbols.join(""));
+  for (const s of speaking) for (const ch of s.ipa.join("")) assert.ok(plain.has(ch) || explained.has(ch), `símbolo sem explicação: ${ch} em "${s.en}"`);
+  for (const group of IPA_GUIDE) for (const [, word, ipa, tip] of group.sounds) assert.ok(word && ipa && tip);
+  assert.ok(owl("happy", 50).includes('width="50"') && owl("sad") !== owl("normal"));
+});
+
 test("todo texto falado tem o seu arquivo de áudio", () => {
   const index = new Set(JSON.parse(readFileSync(join(root, "audio/index.json"), "utf8")));
   const need = [];
@@ -256,7 +326,16 @@ test("todo texto falado tem o seu arquivo de áudio", () => {
     }
     lesson.vocab.forEach((_, i) => need.push(vocabFile(lesson.id, i)));
   }
-  for (const s of speaking) need.push(speakingFile(s.id));
+  for (const s of speaking) {
+    need.push(speakingFile(s.id));
+    for (const w of ex.tokenize(s.en)) need.push(wordFile(w));
+  }
+  for (const word of WORDS) {
+    need.push(wordFile(word.word));
+    for (const card of word.cards) need.push(contextFile(card.id));
+  }
+  for (const word of guideWords()) need.push(wordFile(word));
+  assert.equal(contextFile("w-get-3"), "c/get-3.mp3");
   assert.equal(wordFile("I'm"), "w/i_m.mp3");
   assert.equal(new Set(need).size, index.size);
   for (const file of need) {
@@ -280,7 +359,10 @@ test("progresso: salva, carrega, migra dados antigos e valida backup", () => {
   // Dados da primeira versão: sem vidas nem gemas, e com frases de baralhos do Anki.
   memory.set("trilha-ingles-v1", JSON.stringify({ version: 1, xp: 35, lessonsDone: { "u1-l1": true }, items: { "u1-l1-s1": { ivl: 1 }, a1700000000000: { ivl: 9 } }, settings: { sound: false } }));
   const migrated = store.load(storage);
-  assert.deepEqual([migrated.version, migrated.xp, migrated.gems, migrated.hearts.count, migrated.settings.sound, migrated.settings.effects], [2, 35, 0, 5, false, true]);
+  assert.deepEqual([migrated.version, migrated.xp, migrated.gems, migrated.hearts.count, migrated.settings.sound, migrated.settings.effects], [3, 35, 0, 5, false, true]);
+  // Quem já usava o app também passa pelas perguntas iniciais, sem perder o progresso.
+  assert.deepEqual(migrated.profile, { onboarded: false, reason: null, skill: "a1", minutes: 10, wordsPerDay: 2, startUnit: 0 });
+  assert.deepEqual([migrated.words, migrated.tour], [{}, {}]);
   assert.deepEqual(Object.keys(migrated.items), ["u1-l1-s1"]);
   assert.deepEqual(migrated.daily.claimed, []);
   memory.set("trilha-ingles-v1", "{quebrado");

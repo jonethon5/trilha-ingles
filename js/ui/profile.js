@@ -2,6 +2,7 @@
 
 import { $, h, app, actions, tabViews, show, save, toast, titleBar, barHtml, byId, replaceState, lessons, srs, game, store, audio } from "../core.js";
 import { sentenceFile } from "../audio-paths.js";
+import { startOnboarding } from "./onboard.js";
 
 function stats() {
   const state = app.state;
@@ -15,6 +16,13 @@ function stats() {
     spoken: Object.values(state.speak.history).reduce((sum, list) => sum + list.length, 0),
     custom: state.custom.length,
   };
+}
+
+function planText() {
+  const { profile, goal, speak } = app.state;
+  const pace = game.PACES.find((p) => p.minutes === profile.minutes);
+  const skill = game.SKILLS.find((s) => s.id === profile.skill);
+  return `${profile.minutes} minutos por dia (ritmo ${pace.name.toLowerCase()}), nível "${skill.text.toLowerCase()}": meta de ${goal} XP, ${profile.wordsPerDay} ${profile.wordsPerDay === 1 ? "palavra nova" : "palavras novas"} e ${speak.goal} ${speak.goal === 1 ? "frase falada" : "frases faladas"} por dia.`;
 }
 
 function showProfile() {
@@ -44,6 +52,8 @@ function showProfile() {
     </div>
     <p class="section-title">Conquistas</p>
     <div class="card list">${badges}</div>
+    <p class="section-title">Meu plano</p>
+    <div class="card"><p>${h(planText())}</p><button class="link" data-act="redo-onboarding">Refazer as perguntas iniciais</button></div>
     <p class="section-title">Ajustes</p>
     <div class="card">
       <label class="row"><span>Meta diária</span><select id="goal">${goals}</select></label>
@@ -110,6 +120,7 @@ export async function restoreBackup(file) {
 }
 
 Object.assign(actions, {
+  "redo-onboarding": startOnboarding,
   export: exportBackup,
   restore: () => $("#file-backup").click(),
   reset: () => {

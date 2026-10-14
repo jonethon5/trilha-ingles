@@ -17,7 +17,9 @@ import { fileURLToPath } from "node:url";
 import { COURSE, flatLessons } from "../js/course.js";
 import { flatSpeaking } from "../js/speaking.js";
 import { tokenize } from "../js/exercise.js";
-import { wordFile } from "../js/audio-paths.js";
+import { contextFile, wordFile } from "../js/audio-paths.js";
+import { WORDS } from "../js/words.js";
+import { guideWords } from "../js/ipa.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const { PIPER, VOICE, LAME } = process.env;
@@ -35,7 +37,16 @@ for (const lesson of flatLessons(COURSE)) {
   }
   lesson.vocab.forEach(([en], i) => jobs.set(`v/${lesson.id}-${i + 1}.mp3`, en.replace(/\s*\/\s*/g, ", ")));
 }
-for (const s of flatSpeaking()) jobs.set(`p/${s.id}.mp3`, s.en);
+for (const s of flatSpeaking()) {
+  jobs.set(`p/${s.id}.mp3`, s.en);
+  // Cada palavra do treino de fala também existe sozinha, para tocar ao ser tocada na tela.
+  for (const word of tokenize(s.en)) jobs.set(wordFile(word), word);
+}
+for (const word of WORDS) {
+  jobs.set(wordFile(word.word), word.word);
+  for (const card of word.cards) jobs.set(contextFile(card.id), card.en);
+}
+for (const word of guideWords()) jobs.set(wordFile(word), word);
 
 const out = join(root, "audio");
 const tmp = mkdtempSync(join(tmpdir(), "trilha-audio-"));

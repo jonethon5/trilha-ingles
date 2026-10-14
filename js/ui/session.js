@@ -2,9 +2,10 @@
 
 import { $, h, app, actions, show, save, toast, barHtml, allSentences, wordPool, hearts, daily, addXp, schedule, say, sayWord, playFile, effect, srs, game, ex, audio } from "../core.js";
 import { vocabFile } from "../audio-paths.js";
+import { owl } from "../owl.js";
 
 const FACES = ["🧑‍🦱", "👩‍🦰", "🧔", "👩‍🦳", "🧑‍🎓", "👨‍🍳"];
-const USES_HEARTS = { lesson: true, unit: true, practice: false, review: false };
+const USES_HEARTS = { lesson: true, unit: true, practice: false };
 
 const INSTRUCTIONS = {
   pairs: "Toque nos pares",
@@ -265,14 +266,18 @@ function formatTime(ms) {
 
 function finish() {
   const session = app.session;
-  const { kind, mistakes, total } = session;
-  const state = app.state;
-  if (kind === "lesson") {
+  if (session.kind === "lesson") {
     // Lição nova: a frase conta como acerto se todos os exercícios dela saíram de primeira.
     for (const s of session.sentences) schedule(s.id, session.firstTry.get(s.id) !== false);
   }
-  if (session.lessonId) state.lessonsDone[session.lessonId] = true;
+  if (session.lessonId) app.state.lessonsDone[session.lessonId] = true;
+  complete(session);
+}
 
+// Fecha qualquer tipo de sessão: soma XP, atualiza missões, vidas e sequência, e mostra o resultado.
+// `info` precisa de { kind, mistakes, total, startedAt, back }.
+export function complete({ kind, mistakes, total, startedAt, back }) {
+  const state = app.state;
   const today = srs.dayStart();
   const gained = game.sessionXp(kind, mistakes);
   const { levelUp, level } = addXp(gained);
@@ -296,29 +301,27 @@ function finish() {
   effect("done");
 
   const accuracy = Math.round((total / (total + mistakes)) * 100);
-  const back = session.back;
   app.session = { back, streakScreen: firstToday, usedFreeze: result.usedFreeze };
   const messages = {
     lesson: "As frases novas voltam amanhã para a primeira revisão.",
     unit: "Unidade concluída. A próxima está liberada.",
     practice: "Praticar mantém as frases frescas.",
-    review: "Cada acerto empurrou a próxima revisão para mais longe.",
+    review: "Cada cartão volta na data certa para você não esquecer.",
   };
   show(
-    `<div class="center"><div class="big">${mistakes ? "🎉" : "🏆"}</div>
+    `<div class="center">${owl("happy", 150)}
       <h2>${mistakes ? "Sessão concluída!" : "Sessão perfeita!"}</h2>
       <p>${messages[kind]}</p>
       <div class="result-row">
         <div class="r-xp"><span>XP total</span><b>⚡ ${gained}</b></div>
         <div class="r-acc"><span>Precisão</span><b>🎯 ${accuracy}%</b></div>
-        <div class="r-time"><span>Tempo</span><b>⏱ ${formatTime(Date.now() - session.startedAt)}</b></div>
+        <div class="r-time"><span>Tempo</span><b>⏱ ${formatTime(Date.now() - startedAt)}</b></div>
       </div>
       ${extras.map((e) => `<p class="extra">${h(e)}</p>`).join("")}</div>
     <div class="session-foot"><button class="btn" data-act="after-result">Continuar</button></div>`,
     { showTabs: false },
   );
 }
-
 function showStreak() {
   const { back, usedFreeze } = app.session;
   const today = srs.dayStart();
@@ -344,7 +347,7 @@ function showFailed() {
   const next = hearts().nextIn;
   app.session = { back };
   show(
-    `<div class="center"><div class="big">💔</div><h2>Acabaram as vidas</h2>
+    `<div class="center">${owl("sad", 150)}<h2>Acabaram as vidas</h2>
       <p>A lição recomeça do início. Uma revisão concluída devolve 1 vida${next ? `, e a próxima volta sozinha em ${game.formatWait(next)}` : ""}.</p></div>
     <div class="session-foot"><button class="btn" data-act="leave">Voltar</button></div>`,
     { showTabs: false },

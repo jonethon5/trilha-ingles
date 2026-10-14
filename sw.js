@@ -1,6 +1,6 @@
 // Service worker: guarda o app no aparelho para funcionar sem internet.
 // Ao mudar qualquer arquivo do app, aumente a versão para os aparelhos baixarem de novo.
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `trilha-${VERSION}`;
 // Os áudios ficam em um cache próprio, que sobrevive às atualizações do app.
 const AUDIO_CACHE = "trilha-audio-v1";
@@ -14,6 +14,9 @@ const FILES = [
   "js/core.js",
   "js/course.js",
   "js/speaking.js",
+  "js/words.js",
+  "js/ipa.js",
+  "js/owl.js",
   "js/srs.js",
   "js/game.js",
   "js/exercise.js",
@@ -28,6 +31,9 @@ const FILES = [
   "js/ui/speak.js",
   "js/ui/quests.js",
   "js/ui/profile.js",
+  "js/ui/cards.js",
+  "js/ui/tour.js",
+  "js/ui/onboard.js",
   "audio/index.json",
   "icons/icon-180.png",
   "icons/icon-192.png",

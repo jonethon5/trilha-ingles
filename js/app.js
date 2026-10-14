@@ -6,6 +6,9 @@ import "./ui/learn.js";
 import "./ui/review.js";
 import "./ui/speak.js";
 import "./ui/quests.js";
+import "./ui/cards.js";
+import "./ui/tour.js";
+import { startOnboarding } from "./ui/onboard.js";
 import { restoreBackup } from "./ui/profile.js";
 
 actions.tab = (el) => openTab(el.dataset.tab);
@@ -31,9 +34,15 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && tabsVisible()) openTab();
 });
 
+// Na primeira abertura a coruja faz as perguntas iniciais; depois disso o app abre direto na trilha.
+function start() {
+  if (app.state.profile.onboarded) openTab("learn");
+  else startOnboarding();
+}
+
 async function boot() {
   indexContent();
-  openTab("learn");
+  start();
   // O índice diz quais frases têm gravação; ao chegar, o conteúdo é marcado de novo.
   await audio.loadIndex();
   indexContent();

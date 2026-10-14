@@ -10,13 +10,19 @@ A ideia junta dois modelos: a trilha de lições, as vidas e as missões dos app
 2. Toque em **Compartilhar** e depois em **Adicionar à Tela de Início**.
 3. Abra pelo ícone novo. Em **Perfil → Baixar áudios** dá para guardar todos os áudios e usar sem internet.
 
+## Primeira abertura
+
+A coruja Cora, mascote do app, faz três perguntas: por que a pessoa quer aprender inglês, quanto já sabe e quanto tempo tem por dia. As respostas viram um plano (`planFor` em `js/game.js`): a meta diária de XP, quantas palavras novas entram por dia, quantas frases de fala e em que unidade a trilha começa. Depois ela apresenta cada aba na primeira vez que é aberta.
+
+A tela inicial tem o botão "Já tenho uma conta", mas contas ainda não existem: o progresso fica só no aparelho.
+
 ## As cinco abas
 
 | Aba | O que tem |
 |---|---|
 | **Aprender** | A trilha: 8 unidades, 24 lições e 192 frases. Cada unidade tem guia de vocabulário, um baú de gemas e uma revisão final que libera a unidade seguinte. |
-| **Revisão** | A repetição espaçada à vista: o que vence hoje, a previsão da semana, a explicação do método e o cadastro das suas próprias frases. |
-| **Falar** | Treino de pronúncia em quatro níveis (A1 a B2): você ouve a frase, vê a transcrição fonética (IPA), grava a sua voz e compara com o modelo. |
+| **Revisão** | Flashcards no estilo do Anki: frente em português, verso em inglês com áudio, e quatro botões (Errei, Difícil, Bom, Fácil) que decidem quando o cartão volta. O conteúdo é um baralho de 50 verbos, cada um em cinco frases diferentes. Os cartões próprios liberam com 20 palavras aprendidas, ou de cara para quem declara nível intermediário. |
+| **Falar** | Treino de pronúncia em quatro níveis (A1 a B2): você ouve a frase, vê a transcrição fonética (IPA), toca em qualquer palavra para ouvi-la sozinha, grava a sua voz e compara com o modelo. Um guia de sons explica cada símbolo, com exemplo e dica para quem fala português. |
 | **Missões** | Três missões por dia, que pagam gemas, mais a sequência de dias e a meta diária. |
 | **Perfil** | Nível, estatísticas, conquistas, ajustes e backup. |
 
@@ -41,7 +47,7 @@ Uma lição nova vai do mais fácil ao mais difícil. Nas revisões, quanto mais
 
 ## Repetição espaçada
 
-Cada frase tem a sua própria data de revisão. Acertar multiplica o intervalo (1 dia, 3, 8, 20...); errar volta para 1 dia e marca a frase como mais difícil. É o algoritmo SM-2, o mesmo do Anki, reduzido a acertou ou errou. Está em `js/srs.js`.
+Cada frase tem a sua própria data de revisão. Acertar multiplica o intervalo (1 dia, 3, 8, 20...); errar volta para 1 dia e marca a frase como mais difícil. É o algoritmo SM-2, o mesmo do Anki, em `js/srs.js`. Nos flashcards valem os quatro botões; nos exercícios da trilha, acertar conta como "Bom" e errar como "Errei".
 
 ## Como a fala é comparada
 
@@ -56,7 +62,7 @@ A comparação é feita no próprio aparelho, sem enviar a gravação a lugar ne
 
 ## Áudio
 
-Todas as frases, palavras e vocabulário do curso têm áudio gravado em `audio/` (662 arquivos, 2,8 MB), gerado com o sintetizador [Piper](https://github.com/rhasspy/piper) e a voz `en_US-ljspeech-medium`, treinada no LJ Speech Dataset, de domínio público. Para gerar de novo depois de mudar o conteúdo:
+Todas as frases, palavras e vocabulário do curso têm áudio gravado em `audio/` (1.029 arquivos, 4,6 MB), gerado com o sintetizador [Piper](https://github.com/rhasspy/piper) e a voz `en_US-ljspeech-medium`, treinada no LJ Speech Dataset, de domínio público. Para gerar de novo depois de mudar o conteúdo:
 
 ```bash
 PIPER=caminho/piper.exe VOICE=caminho/en_US-ljspeech-medium.onnx LAME=caminho/lame.exe node tools/make-audio.mjs
@@ -79,7 +85,8 @@ node test/run.mjs    # testes
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `js/course.js`, `js/speaking.js` | Conteúdo: curso e frases do treino de fala, com IPA |
+| `js/course.js`, `js/speaking.js`, `js/words.js` | Conteúdo: curso, frases do treino de fala com IPA e baralho de palavras em contexto |
+| `js/ipa.js`, `js/owl.js` | Guia de sons e o desenho da mascote |
 | `js/srs.js` | Repetição espaçada |
 | `js/exercise.js` | Montagem e conferência dos exercícios |
 | `js/game.js` | XP, níveis, vidas, gemas, sequência, missões e conquistas |
