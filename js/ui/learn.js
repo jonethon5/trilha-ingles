@@ -3,6 +3,7 @@
 import { h, app, actions, tabViews, show, save, toast, topBar, barHtml, lessons, units, unitColor, hearts, daily, todayCards, canListen, playFile, openTab, effect, game, ex } from "../core.js";
 import { vocabFile } from "../audio-paths.js";
 import { startSession } from "./session.js";
+import { owl } from "../owl.js";
 
 const done = (id) => Boolean(app.state.lessonsDone[id]);
 
@@ -36,7 +37,8 @@ function chestStatus(unit) {
 }
 
 function node({ status, act, data, icon, label, cls = "" }) {
-  const callout = status === "next" ? `<em class="callout">Começar</em>` : "";
+  // A lição da vez ganha o balão e a coruja ao lado.
+  const callout = status === "next" ? `<em class="callout">Começar</em>${cls ? "" : `<span class="buddy">${owl("normal", 62)}</span>`}` : "";
   return `<button class="node ${status} ${cls}" data-act="${act}" ${data} ${status === "locked" ? "disabled" : ""}>${callout}<i>${icon}</i><span>${h(label)}</span></button>`;
 }
 
@@ -185,9 +187,9 @@ function openChest(unitIndex) {
   app.state.chests[unit.id] = true;
   app.state.gems += game.CHEST_GEMS;
   save();
-  effect("done");
+  effect("chest");
   show(
-    `<div class="center"><div class="big">🎁</div><h2>+${game.CHEST_GEMS} 💎</h2><p>Baú da unidade ${unitIndex + 1} aberto. Use as gemas na loja para recarregar vidas ou proteger a sua sequência.</p></div>
+    `<div class="center"><div class="big chest-open">🎁</div><h2>+${game.CHEST_GEMS} 💎</h2><p>Baú da unidade ${unitIndex + 1} aberto. Use as gemas na loja para recarregar vidas ou proteger a sua sequência.</p></div>
     <div class="session-foot"><button class="btn" data-act="tab" data-tab="learn">Continuar</button></div>`,
     { showTabs: false },
   );

@@ -55,7 +55,21 @@ const SOUNDS = {
   wrong: tones([[220, 0.12], [165, 0.2]], 0.3),
   done: tones([[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.25]]),
   tap: tones([[880, 0.03]], 0.12),
+  pick: tones([[620, 0.035]], 0.14), // palavra ou opção escolhida
+  drop: tones([[440, 0.035]], 0.12), // palavra devolvida ao banco
+  flip: tones([[520, 0.03], [780, 0.05]], 0.12), // cartão virado
+  match: tones([[700, 0.05], [1050, 0.08]], 0.18), // par ligado
+  open: tones([[392, 0.05], [523, 0.07]], 0.12), // tela nova
+  heart: tones([[330, 0.08], [247, 0.14]], 0.22), // vida perdida
+  combo: tones([[784, 0.06], [988, 0.06], [1175, 0.12]], 0.2),
+  chest: tones([[523, 0.07], [659, 0.07], [784, 0.07], [1047, 0.07], [1319, 0.22]], 0.22),
+  level: tones([[392, 0.1], [523, 0.1], [659, 0.1], [784, 0.14], [1047, 0.3]], 0.24),
+  streak: tones([[440, 0.08], [554, 0.08], [659, 0.08], [880, 0.26]], 0.22),
 };
+
+// Enquanto uma fala toca, o <body> ganha a classe "talking": é ela que faz a boca dos personagens mexer.
+for (const type of ["playing"]) voice.addEventListener(type, () => voice.src !== SOUNDS.silence && document.body.classList.add("talking"));
+for (const type of ["pause", "ended", "error", "emptied"]) voice.addEventListener(type, () => document.body.classList.remove("talking"));
 
 // ---------- Destravar no primeiro toque ----------
 

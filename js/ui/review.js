@@ -88,9 +88,10 @@ function customCard() {
     )
     .join("");
   return `<p class="section-title">Meus cartões</p>
-    <div class="card"><p>Ouviu uma frase em uma série ou em uma reunião? Crie um cartão e ela entra na sua revisão de hoje.</p>
+    <div class="card"><p>Ouviu uma frase em uma série ou em uma reunião? Crie um cartão e ela entra na sua revisão de hoje. Frases guardadas nas Histórias também aparecem aqui.</p>
       <label class="field"><span>Frente (português)</span><input id="new-pt" type="text" placeholder="Eu já volto." autocomplete="off" /></label>
       <label class="field"><span>Verso (inglês)</span><input id="new-en" type="text" lang="en" placeholder="I'll be right back." autocapitalize="sentences" autocomplete="off" /></label>
+      <label class="field"><span>O que aparece na frente</span><select id="new-front"><option value="pt">Português (eu digo em inglês)</option><option value="en">Inglês (eu lembro o significado)</option></select></label>
       <button class="btn" data-act="add-custom">Criar cartão</button></div>
     ${list.length ? `<div class="card list">${rows}</div>` : ""}`;
 }
@@ -107,7 +108,7 @@ function addCustom() {
   if (!/[a-z]/i.test(en)) return toast("O verso precisa ter a frase em inglês.");
   if (ex.tokenize(en).length > MAX_WORDS) return toast(`Use frases de até ${MAX_WORDS} palavras: cartão curto se fixa melhor.`);
   if (allSentences().some((s) => ex.canon(s.en) === ex.canon(en))) return toast("Essa frase já está no app.");
-  app.state.custom.push({ id: `c${Date.now()}`, en, pt });
+  app.state.custom.push({ id: `c${Date.now()}`, en, pt, front: $("#new-front").value });
   save();
   indexContent();
   toast("Cartão criado. Ele já está na revisão de hoje.");

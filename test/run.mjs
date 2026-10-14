@@ -11,10 +11,12 @@ import * as game from "../js/game.js";
 import * as ex from "../js/exercise.js";
 import * as store from "../js/store.js";
 import * as P from "../js/pronounce.js";
-import { contextFile, sentenceFile, speakingFile, vocabFile, wordFile } from "../js/audio-paths.js";
+import { contextFile, sentenceFile, speakingFile, storyFile, vocabFile, wordFile } from "../js/audio-paths.js";
 import { WORDS, highlight, CONTEXTS_PER_WORD } from "../js/words.js";
-import { IPA_GUIDE, guideWords } from "../js/ipa.js";
+import { SOUND_GROUPS, STRESS_MARKS, MINIMAL_PAIRS, extras, guideWords } from "../js/ipa.js";
 import { owl } from "../js/owl.js";
+import { STORIES, GLOSSARY, pieces } from "../js/stories.js";
+import { character, castFor, CAST_IDS } from "../js/characters.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -305,15 +307,57 @@ test("baralho de palavras: 50 palavras, 5 frases cada, com a palavra dentro da f
   assert.deepEqual(highlight(WORDS.find((w) => w.id === "let"), "Let's go home."), [{ text: "Let's", hit: true }, { text: " go home.", hit: false }]);
 });
 
-test("guia de sons cobre todos os símbolos usados nas transcrições", () => {
-  const symbols = IPA_GUIDE.flatMap((g) => g.sounds.map(([symbol]) => symbol));
+test("aba Sons: vogais e consoantes cobrem todos os símbolos usados nas transcrições", () => {
+  assert.deepEqual(SOUND_GROUPS.map((g) => g.id), ["vowels", "consonants"]);
+  const sounds = SOUND_GROUPS.flatMap((g) => g.sounds);
+  const symbols = sounds.map(([symbol]) => symbol);
   assert.equal(new Set(symbols).size, symbols.length);
-  // Letras que soam como em português não precisam de explicação.
-  const plain = new Set("bdfɡklmnpstvz");
-  const explained = new Set(symbols.join(""));
-  for (const s of speaking) for (const ch of s.ipa.join("")) assert.ok(plain.has(ch) || explained.has(ch), `símbolo sem explicação: ${ch} em "${s.en}"`);
-  for (const group of IPA_GUIDE) for (const [, word, ipa, tip] of group.sounds) assert.ok(word && ipa && tip);
-  assert.ok(owl("happy", 50).includes('width="50"') && owl("sad") !== owl("normal"));
+  assert.equal(new Set(sounds.map(([, word]) => word)).size, sounds.length, "cada som tem a sua própria palavra de exemplo");
+  const explained = new Set([...symbols, ...STRESS_MARKS.map(([symbol]) => symbol)].join(""));
+  for (const s of speaking) for (const ch of s.ipa.join("")) assert.ok(explained.has(ch), `símbolo sem explicação: ${ch} em "${s.en}"`);
+  for (const sound of sounds) {
+    const [symbol, word, ipa, tip] = sound;
+    assert.ok(word && tip && extras(sound).length === 2, symbol);
+    // A transcrição da palavra de exemplo precisa conter o som que ela ilustra.
+    assert.ok(ipa.includes(symbol), `${word} /${ipa}/ não contém ${symbol}`);
+  }
+  for (const [a, b, what] of MINIMAL_PAIRS) assert.ok(a !== b && what);
+  // Nenhuma palavra se repete entre os pares, para o treino de ouvido não ficar previsível.
+  assert.equal(new Set(MINIMAL_PAIRS.flatMap(([a, b]) => [a, b])).size, MINIMAL_PAIRS.length * 2);
+});
+
+test("histórias: 3 contos, 5 partes de 6 frases, e toda palavra tem significado", () => {
+  assert.deepEqual(STORIES.map((s) => s.id), ["goldilocks", "tortoise", "pigs"]);
+  const sentences = STORIES.flatMap((s) => s.parts.flatMap((p) => p.sentences));
+  assert.equal(sentences.length, 90);
+  assert.equal(new Set(sentences.map((s) => s.id)).size, 90);
+  assert.equal(new Set(sentences.map((s) => s.pt)).size, 90, "traduções repetidas confundiriam as perguntas");
+  for (const story of STORIES) {
+    assert.equal(story.parts.length, 5, story.id);
+    for (const part of story.parts) assert.equal(part.sentences.length, 6, `${story.id} parte ${part.index + 1}`);
+  }
+  const missing = new Set();
+  for (const s of sentences) {
+    assert.equal(pieces(s.en).map((p) => p.text).join(""), s.en);
+    for (const piece of pieces(s.en)) if (piece.word && !GLOSSARY[piece.word]) missing.add(piece.word);
+  }
+  assert.deepEqual([...missing], [], "palavras sem significado no glossário");
+  assert.deepEqual(pieces("\"Let's go!\" she said.").filter((p) => p.word).map((p) => p.word), ["let's", "go", "she", "said"]);
+});
+
+test("personagens e coruja: cada um tem o seu desenho e as três expressões", () => {
+  assert.equal(CAST_IDS.length, 5);
+  assert.equal(new Set(CAST_IDS.map((id) => character(id))).size, 5);
+  for (const id of CAST_IDS) {
+    const moods = ["normal", "happy", "sad"].map((mood) => character(id, { mood }));
+    assert.equal(new Set(moods).size, 3, id);
+    assert.ok(moods.every((svg) => svg.includes("mouth-talk") && svg.includes('class="eye"') && svg.includes("arm-r")), id);
+  }
+  assert.ok(character("bia", { height: 99, cls: "cheer" }).includes('height="99"'));
+  assert.equal(castFor("u1-l1"), castFor("u1-l1"));
+  assert.ok(CAST_IDS.includes(castFor("qualquer coisa")));
+  assert.ok(new Set(lessons.map((l) => castFor(l.title))).size >= 4, "as lições usam personagens variados");
+  assert.ok(owl("happy", 50).includes('width="50"') && owl("sad") !== owl("normal") && owl().includes('class="eye"'));
 });
 
 test("todo texto falado tem o seu arquivo de áudio", () => {
@@ -335,6 +379,15 @@ test("todo texto falado tem o seu arquivo de áudio", () => {
     for (const card of word.cards) need.push(contextFile(card.id));
   }
   for (const word of guideWords()) need.push(wordFile(word));
+  for (const story of STORIES) {
+    for (const part of story.parts) {
+      for (const s of part.sentences) {
+        need.push(storyFile(s.id));
+        for (const piece of pieces(s.en)) if (piece.word) need.push(wordFile(piece.word));
+      }
+    }
+  }
+  assert.equal(storyFile("pigs-2-3"), "t/pigs-2-3.mp3");
   assert.equal(contextFile("w-get-3"), "c/get-3.mp3");
   assert.equal(wordFile("I'm"), "w/i_m.mp3");
   assert.equal(new Set(need).size, index.size);

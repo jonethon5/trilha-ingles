@@ -7,7 +7,7 @@ export const MAX_HEARTS = 5;
 export const HEART_REGEN = 4 * 60 * 60 * 1000; // uma vida volta a cada 4 horas
 export const REVIEW_SIZE = 10;
 
-export const XP = { lesson: 10, practice: 5, unit: 20, review: 10, speak: 5, perfectBonus: 5 };
+export const XP = { lesson: 10, practice: 5, unit: 20, review: 10, story: 10, sounds: 5, speak: 5, perfectBonus: 5 };
 export const SHOP = { refill: { cost: 40 }, freeze: { cost: 30, max: 2 } };
 export const CHEST_GEMS = 20;
 export const LEVEL_UP_GEMS = 10;

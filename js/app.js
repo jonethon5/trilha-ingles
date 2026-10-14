@@ -7,11 +7,16 @@ import "./ui/review.js";
 import "./ui/speak.js";
 import "./ui/quests.js";
 import "./ui/cards.js";
+import "./ui/sounds.js";
+import "./ui/stories.js";
 import "./ui/tour.js";
 import { startOnboarding } from "./ui/onboard.js";
 import { restoreBackup } from "./ui/profile.js";
 
-actions.tab = (el) => openTab(el.dataset.tab);
+actions.tab = (el) => {
+  audio.effect(app.state.settings.effects ? "open" : "silence");
+  openTab(el.dataset.tab);
+};
 
 // Um único ouvinte de clique para o app inteiro: o data-act do botão diz qual ação chamar.
 document.addEventListener("click", (event) => {

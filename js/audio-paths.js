@@ -5,6 +5,7 @@ export const sentenceFile = (id) => `s/${id}.mp3`;
 export const speakingFile = (id) => `p/${id}.mp3`;
 // Baralho de palavras: "c/get-1.mp3" é a primeira frase de "get"; a palavra sozinha usa wordFile.
 export const contextFile = (cardId) => `c/${cardId.replace(/^w-/, "")}.mp3`;
+export const storyFile = (sentenceId) => `t/${sentenceId}.mp3`;
 export const vocabFile = (lessonId, index) => `v/${lessonId}-${index + 1}.mp3`;
 
 // "I'm" -> w/i_m.mp3, "o'clock" -> w/o_clock.mp3

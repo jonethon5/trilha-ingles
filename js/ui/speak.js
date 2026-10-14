@@ -1,10 +1,10 @@
 // Aba Falar: ouvir a frase modelo, ver a transcrição fonética (IPA), gravar a própria voz
 // e comparar as duas gravações.
 
-import { h, app, actions, tabViews, show, save, toast, titleBar, barHtml, daily, addXp, effect, game, audio } from "../core.js";
+import { h, app, actions, tabViews, show, save, toast, titleBar, barHtml, daily, addXp, effect, openTab, game, audio } from "../core.js";
 import { LEVELS, flatSpeaking, words } from "../speaking.js";
 import { speakingFile, wordFile } from "../audio-paths.js";
-import { IPA_GUIDE } from "../ipa.js";
+import { character, castFor } from "../characters.js";
 import { tokenize } from "../exercise.js";
 import * as recorder from "../recorder.js";
 import { compare, label } from "../pronounce.js";
@@ -56,7 +56,7 @@ function showSpeak() {
       <div class="goal"><span>${done >= speak.goal ? "🏆" : "🎙️"}</span>${barHtml(done / speak.goal, "green")}<span class="small">${Math.min(done, speak.goal)} / ${speak.goal}</span></div>
       <button class="btn" data-act="speak-next">${done >= speak.goal ? "Treinar mais uma" : "Treinar agora"}</button></div>
     <div class="levels">${levels}</div>
-    <button class="card nudge guide-link" data-act="speak-guide"><span>🔤</span><div><h3>Guia de sons</h3><p>Como ler os símbolos que aparecem embaixo das palavras.</p></div><b>›</b></button>
+    <button class="card nudge guide-link" data-act="speak-guide"><span>🔤</span><div><h3>Sons do inglês</h3><p>Como ler os símbolos que aparecem embaixo das palavras.</p></div><b>›</b></button>
     <p class="section-title">${level.name} · ${h(level.desc)}</p>
     <div class="card list">${rows}</div>
     <p class="small note">Você ouve a frase, vê como ela soa no alfabeto fonético (IPA), grava a sua voz e o app compara as duas gravações. A nota fica guardada para você acompanhar a evolução; a gravação não sai do aparelho e não é salva.</p></div>`);
@@ -65,27 +65,6 @@ function showSpeak() {
     save();
     showSpeak();
   };
-}
-
-// ---------- Guia de sons ----------
-
-// `from` é o id da frase de onde o guia foi aberto, para o botão de fechar voltar a ela.
-function showGuide(from = null) {
-  const groups = IPA_GUIDE.map(
-    (group) => `<p class="section-title">${h(group.title)}</p><p class="lead">${h(group.note)}</p><div class="card list">${group.sounds
-      .map(
-        ([symbol, word, ipa, tip]) => `<button class="sound" data-act="speak-word" data-word="${h(word)}">
-          <b class="symbol">${h(symbol)}</b><div><span lang="en"><b>${h(word)}</b> <i>/${h(ipa)}/</i></span><small>${h(tip)}</small></div><span>🔊</span></button>`,
-      )
-      .join("")}</div>`,
-  ).join("");
-  show(
-    `<div class="session-top"><button class="close" data-act="${from ? "speak-open" : "tab"}" ${from ? `data-id="${from}"` : `data-tab="speak"`} aria-label="Fechar">✕</button><h2 class="bar-title">Guia de sons</h2></div>
-    <div class="scroll">
-      <p class="lead">A escrita do inglês não mostra a pronúncia: "though", "through" e "tough" terminam igual e soam diferente. Por isso o app mostra, embaixo de cada palavra, os sons dela no Alfabeto Fonético Internacional (IPA), o mesmo dos dicionários. Cada símbolo vale sempre um som só. Toque para ouvir.</p>
-      ${groups}</div>`,
-    { showTabs: false },
-  );
 }
 
 // ---------- Tela de prática ----------
@@ -149,12 +128,12 @@ function drawPractice() {
   show(
     `<div class="session-top"><button class="close" data-act="tab" data-tab="speak" aria-label="Fechar">✕</button><h2 class="bar-title">${level.name} · ${h(level.title)}</h2></div>
     <div class="scroll">
-      <div class="card phrase">${ipaHtml(s)}<p class="pt">${h(s.pt)}</p>
+      <div class="card phrase"><div class="phrase-top">${character(castFor(s.id), { height: 120 })}<div>${ipaHtml(s)}<p class="pt">${h(s.pt)}</p></div></div>
         <div class="listen-row"><button class="btn ghost" data-act="speak-model">🔊 Ouvir</button><button class="btn ghost" data-act="speak-model-slow">🐢 Devagar</button></div></div>
       ${practice.error ? `<div class="card warn"><p>${h(practice.error)}</p></div>` : ""}
       ${!recorder.supported ? `<div class="card warn"><p>Este navegador não permite gravar áudio. Você ainda pode ouvir e repetir.</p></div>` : ""}
       ${practice.result ? resultHtml() : `<p class="lead">Ouça o modelo, depois grave a frase. A linha de baixo de cada palavra mostra como ela soa: toque em uma palavra para ouvi-la sozinha.</p>`}
-      <button class="card nudge guide-link" data-act="speak-guide"><span>🔤</span><div><h3>Guia de sons</h3><p>O que significa cada símbolo, com exemplo para ouvir.</p></div><b>›</b></button>
+      <button class="card nudge guide-link" data-act="speak-guide"><span>🔤</span><div><h3>Sons do inglês</h3><p>O que significa cada símbolo, com exemplo para ouvir.</p></div><b>›</b></button>
       ${historyHtml(s.id)}
       ${practice.result ? `<p class="small note">A nota mede o quanto a sua gravação se parece com a do modelo em ritmo e em sons. Serve para acompanhar a sua evolução na mesma frase; não substitui a avaliação de um professor, e ruído no ambiente derruba o resultado.</p>` : ""}
     </div>
@@ -232,7 +211,7 @@ Object.assign(actions, {
   "speak-open": (el) => openPractice(el.dataset.id),
   "speak-next": () => openPractice(nextId(practice ? byId.get(practice.id).level : app.state.speak.level, practice?.id)),
   "speak-word": (el) => audio.has(wordFile(el.dataset.word)) && audio.play(wordFile(el.dataset.word)),
-  "speak-guide": () => showGuide(practice?.id || null),
+  "speak-guide": () => openTab("sounds"),
   "speak-model": () => audio.play(speakingFile(practice.id)),
   "speak-model-slow": () => audio.play(speakingFile(practice.id), { slow: true }),
   "speak-mine": () => practice.blob && audio.playBlob(practice.blob),

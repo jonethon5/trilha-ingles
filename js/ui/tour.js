@@ -7,7 +7,7 @@ const TOURS = {
   learn: () => [
     `Esta é a sua trilha. Cada bolinha é uma lição curta: toque na que tem o balão "Começar".`,
     "Lá em cima ficam a sua sequência de dias 🔥, as gemas 💎 e as vidas ❤️. Errar em lição nova gasta uma vida, e elas voltam com o tempo.",
-    "Embaixo estão as outras áreas: Revisão, Falar, Missões e Perfil. Eu explico cada uma quando você entrar.",
+    "Embaixo estão as outras áreas: Sons, Histórias, Revisão, Falar e Perfil. Eu explico cada uma quando você entrar. As missões do dia ficam no 🎯 lá em cima.",
   ],
   review: () => [
     "Aqui mora a sua memória de longo prazo. Todo dia eu separo os cartões que estão na hora de rever e algumas palavras novas.",
@@ -16,9 +16,17 @@ const TOURS = {
       ? "Cada palavra nova vem em cinco frases diferentes. E você já pode criar os seus próprios cartões, lá embaixo."
       : `Cada palavra nova vem em cinco frases diferentes. Com ${game.CUSTOM_UNLOCK_WORDS} palavras aprendidas, você libera os seus próprios cartões.`,
   ],
+  sounds: () => [
+    "Aqui estão todos os sons do inglês: primeiro as vogais, depois as consoantes. Toque em um para ouvir a palavra em que ele aparece.",
+    `Os símbolos são os mesmos que aparecem embaixo das palavras na aba Falar. E o treino de ouvido ensina a separar palavras parecidas, como "ship" e "sheep".`,
+  ],
+  stories: () => [
+    "Aqui você lê contos conhecidos em inglês, um pedacinho por dia. A tradução fica embaixo de cada frase, e o botão PT esconde o português para você se testar.",
+    "Toque em uma palavra para ver o significado. Gostou de uma frase? Toque no ＋ e ela vira um flashcard na aba Revisão.",
+  ],
   speak: () => [
     "Aqui você treina a pronúncia. Escolha o nível, ouça a frase, grave a sua voz e compare com o modelo.",
-    "Embaixo de cada palavra está como ela soa. Não conhece os símbolos? Abra o Guia de sons. E toque em qualquer palavra para ouvi-la sozinha.",
+    "Embaixo de cada palavra está como ela soa. Não conhece os símbolos? Eles estão explicados na aba Sons. E toque em qualquer palavra para ouvi-la sozinha.",
   ],
   quests: () => [
     "Todo dia tem três missões novas. Cumpra, colete as gemas e use na loja.",

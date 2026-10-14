@@ -1,7 +1,7 @@
 // Sessão de flashcards, no estilo do Anki: a frente em português, a resposta em inglês com áudio,
 // e quatro botões para dizer como foi. O botão escolhido decide quando o cartão volta.
 
-import { h, app, actions, show, save, barHtml, byId, daily, say, sayWord, effect, todayCards, srs, audio } from "../core.js";
+import { $, h, app, actions, show, save, barHtml, byId, daily, say, sayWord, effect, todayCards, srs, audio, fx } from "../core.js";
 import { wordById, highlight, CONTEXTS_PER_WORD } from "../words.js";
 import { owl } from "../owl.js";
 import { complete } from "./session.js";
@@ -47,6 +47,9 @@ function next() {
   // Palavra nunca vista: a coruja apresenta antes do primeiro cartão dela.
   if (word && !(word.id in app.state.words) && !deck.introduced.has(word.id)) return drawIntro(word);
   drawCard();
+  fx.enter($(".flash"), { from: "translateX(28px)" });
+  // Cartão com o inglês na frente já fala a frase ao aparecer.
+  if (card.front === "en") say(card);
 }
 
 function top() {
@@ -73,6 +76,7 @@ function drawIntro(word) {
 
 function sourceTag(card) {
   if (card.wordId) return `Palavra: ${card.wordId}`;
+  if (card.from) return "Das histórias";
   return card.custom ? "Meu cartão" : "Frase da trilha";
 }
 
@@ -89,10 +93,16 @@ function drawCard() {
   const item = app.state.items[card.id];
   const fresh = srs.isNew(item) && !deck.rated.has(card.id);
   const word = card.wordId && wordById.get(card.wordId);
+  // A frente pode ser o português (padrão: você produz o inglês) ou o inglês (você reconhece o sentido).
+  const englishFirst = card.front === "en";
+  const frontHtml = englishFirst
+    ? `<p class="front" lang="en">${h(card.en)}</p><button class="speak big" data-act="card-say" aria-label="Ouvir">🔊</button>`
+    : `<p class="front">${h(card.pt)}</p>`;
+  const backText = englishFirst ? `<p class="back">${h(card.pt)}</p>` : `<p class="back" lang="en">${english(card)}</p>`;
   const back = deck.shown
-    ? `<hr /><p class="back" lang="en">${english(card)}</p>
+    ? `<hr />${backText}
        ${word ? `<p class="gloss"><b lang="en">${h(word.word)}</b> = ${h(word.pt)}</p>` : ""}
-       <button class="speak big" data-act="card-say" aria-label="Ouvir de novo">🔊</button>`
+       ${englishFirst ? "" : `<button class="speak big" data-act="card-say" aria-label="Ouvir de novo">🔊</button>`}`
     : "";
   const foot = deck.shown
     ? `<div class="grades">${BUTTONS.map((b) => {
@@ -104,8 +114,8 @@ function drawCard() {
   show(
     `${top()}<div class="flash" data-id="${h(card.id)}" data-shown="${deck.shown}">
       <span class="tag ${fresh ? "" : "plain"}">${fresh ? "Novo · " : ""}${h(sourceTag(card))}</span>
-      <p class="hint">${deck.shown ? "Como foi?" : "Diga em inglês, em voz alta"}</p>
-      <p class="front">${h(card.pt)}</p>${back}</div>
+      <p class="hint">${deck.shown ? "Como foi?" : englishFirst ? "O que significa?" : "Diga em inglês, em voz alta"}</p>
+      ${frontHtml}${back}</div>
     <div class="session-foot">${foot}</div>`,
     { showTabs: false },
   );
@@ -139,7 +149,10 @@ Object.assign(actions, {
   "card-show": () => {
     deck.shown = true;
     drawCard();
-    say(byId.get(deck.queue[0]));
+    effect("flip");
+    fx.enter($(".flash .back"), { from: "rotateX(85deg)", duration: 280 });
+    const card = byId.get(deck.queue[0]);
+    if (card.front !== "en") say(card);
   },
   "card-say": () => say(byId.get(deck.queue[0])),
   "card-word": (el) => sayWord(el.dataset.word),

@@ -17,7 +17,8 @@ import { fileURLToPath } from "node:url";
 import { COURSE, flatLessons } from "../js/course.js";
 import { flatSpeaking } from "../js/speaking.js";
 import { tokenize } from "../js/exercise.js";
-import { contextFile, wordFile } from "../js/audio-paths.js";
+import { contextFile, storyFile, wordFile } from "../js/audio-paths.js";
+import { STORIES, pieces } from "../js/stories.js";
 import { WORDS } from "../js/words.js";
 import { guideWords } from "../js/ipa.js";
 
@@ -47,6 +48,15 @@ for (const word of WORDS) {
   for (const card of word.cards) jobs.set(contextFile(card.id), card.en);
 }
 for (const word of guideWords()) jobs.set(wordFile(word), word);
+for (const story of STORIES) {
+  for (const part of story.parts) {
+    for (const s of part.sentences) {
+      jobs.set(storyFile(s.id), s.en);
+      // Cada palavra da história também existe sozinha, para o toque na palavra.
+      for (const piece of pieces(s.en)) if (piece.word) jobs.set(wordFile(piece.word), piece.word);
+    }
+  }
+}
 
 const out = join(root, "audio");
 const tmp = mkdtempSync(join(tmpdir(), "trilha-audio-"));

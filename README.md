@@ -16,15 +16,22 @@ A coruja Cora, mascote do app, faz três perguntas: por que a pessoa quer aprend
 
 A tela inicial tem o botão "Já tenho uma conta", mas contas ainda não existem: o progresso fica só no aparelho.
 
-## As cinco abas
+## As seis abas
 
 | Aba | O que tem |
 |---|---|
 | **Aprender** | A trilha: 8 unidades, 24 lições e 192 frases. Cada unidade tem guia de vocabulário, um baú de gemas e uma revisão final que libera a unidade seguinte. |
+| **Sons** | As vogais e consoantes do inglês em uma grade, com o símbolo fonético e a palavra de exemplo. Tocar em um som toca a palavra e abre a ficha dele. Um treino de ouvido usa pares parecidos, como "ship" e "sheep". |
+| **Histórias** | Contos infantis recontados em inglês simples, em cinco partes curtas, uma parte nova por dia. A leitura avança frase a frase com a tradução embaixo (que dá para esconder); tocar em uma palavra mostra o significado e toca o áudio; o botão ＋ manda a frase ou a palavra para os flashcards, com o inglês na frente. |
 | **Revisão** | Flashcards no estilo do Anki: frente em português, verso em inglês com áudio, e quatro botões (Errei, Difícil, Bom, Fácil) que decidem quando o cartão volta. O conteúdo é um baralho de 50 verbos, cada um em cinco frases diferentes. Os cartões próprios liberam com 20 palavras aprendidas, ou de cara para quem declara nível intermediário. |
 | **Falar** | Treino de pronúncia em quatro níveis (A1 a B2): você ouve a frase, vê a transcrição fonética (IPA), toca em qualquer palavra para ouvi-la sozinha, grava a sua voz e compara com o modelo. Um guia de sons explica cada símbolo, com exemplo e dica para quem fala português. |
-| **Missões** | Três missões por dia, que pagam gemas, mais a sequência de dias e a meta diária. |
 | **Perfil** | Nível, estatísticas, conquistas, ajustes e backup. |
+
+As **missões do dia** (três por dia, que pagam gemas) e a sequência de dias abrem pelo 🎯 e pelo 🔥 da barra do topo.
+
+## Personagens e movimento
+
+Cinco personagens de corpo inteiro e a coruja são desenhados em SVG por código (`js/characters.js`, `js/owl.js`). Eles piscam, respiram, mexem a boca enquanto um áudio toca (a classe `talking` no `<body>`, ligada pelos eventos do elemento de áudio), comemoram no acerto e murcham no erro. As animações de tela, o confete e a contagem dos números usam a Web Animations API (`js/fx.js`). Os efeitos sonoros são ondas geradas em memória, sem arquivos.
 
 ## Exercícios
 
@@ -62,7 +69,7 @@ A comparação é feita no próprio aparelho, sem enviar a gravação a lugar ne
 
 ## Áudio
 
-Todas as frases, palavras e vocabulário do curso têm áudio gravado em `audio/` (1.029 arquivos, 4,6 MB), gerado com o sintetizador [Piper](https://github.com/rhasspy/piper) e a voz `en_US-ljspeech-medium`, treinada no LJ Speech Dataset, de domínio público. Para gerar de novo depois de mudar o conteúdo:
+Todas as frases, palavras e vocabulário do curso têm áudio gravado em `audio/` (1.268 arquivos, 5,8 MB), gerado com o sintetizador [Piper](https://github.com/rhasspy/piper) e a voz `en_US-ljspeech-medium`, treinada no LJ Speech Dataset, de domínio público. Para gerar de novo depois de mudar o conteúdo:
 
 ```bash
 PIPER=caminho/piper.exe VOICE=caminho/en_US-ljspeech-medium.onnx LAME=caminho/lame.exe node tools/make-audio.mjs
@@ -86,7 +93,8 @@ node test/run.mjs    # testes
 | Arquivo | Responsabilidade |
 |---|---|
 | `js/course.js`, `js/speaking.js`, `js/words.js` | Conteúdo: curso, frases do treino de fala com IPA e baralho de palavras em contexto |
-| `js/ipa.js`, `js/owl.js` | Guia de sons e o desenho da mascote |
+| `js/stories.js`, `js/ipa.js` | Histórias com glossário, e os sons do inglês |
+| `js/characters.js`, `js/owl.js`, `js/fx.js` | Personagens, mascote e efeitos visuais |
 | `js/srs.js` | Repetição espaçada |
 | `js/exercise.js` | Montagem e conferência dos exercícios |
 | `js/game.js` | XP, níveis, vidas, gemas, sequência, missões e conquistas |

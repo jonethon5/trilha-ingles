@@ -19,12 +19,16 @@ export function defaultState() {
     lessonsDone: {}, // id da lição ou da revisão de unidade -> true
     chests: {}, // id da unidade -> true quando o baú foi aberto
     items: {}, // id da frase -> agendamento (ver srs.js)
-    custom: [], // frases cadastradas pelo usuário: { id, en, pt }
+    // Cartões criados pelo usuário ou salvos das histórias: { id, en, pt, front, audio }.
+    // "front" diz qual língua fica na frente (padrão "pt"); "audio" é o arquivo gravado, se houver.
+    custom: [],
     speak: { level: "a1", goal: 3, history: {} }, // history: id da frase -> [{ t, score }]
     // Respostas da primeira abertura e o plano que saiu delas.
     profile: { onboarded: false, reason: null, skill: "a1", minutes: 10, wordsPerDay: 2, startUnit: 0 },
     words: {}, // id da palavra -> dia em que ela foi começada, para limitar as palavras novas por dia
     tour: {}, // aba -> true depois que a coruja já explicou
+    stories: {}, // id da história -> { done: partes lidas, day: dia da última leitura }
+    sounds: {}, // símbolo -> true depois de ouvido na aba Sons
     settings: { sound: true, effects: true },
   };
 }
@@ -47,6 +51,8 @@ function merge(saved) {
     profile: { ...base.profile, ...saved.profile },
     words: { ...saved.words },
     tour: { ...saved.tour },
+    stories: { ...saved.stories },
+    sounds: { ...saved.sounds },
     lessonsDone: { ...saved.lessonsDone },
     chests: { ...saved.chests },
     custom: [...(saved.custom || [])],

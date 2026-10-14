@@ -8,6 +8,7 @@ import * as store from "./store.js";
 import * as audio from "./audio.js";
 import { contextFile, sentenceFile, wordFile } from "./audio-paths.js";
 import { WORDS } from "./words.js";
+import * as fx from "./fx.js";
 
 export const $ = (sel, el = document) => el.querySelector(sel);
 export const h = (text) => String(text).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
@@ -67,7 +68,7 @@ export function indexContent() {
       byId.set(card.id, card);
     }
   }
-  for (const s of app.state.custom) byId.set(s.id, { ...s, alts: [], audio: null, custom: true });
+  for (const s of app.state.custom) byId.set(s.id, { ...s, alts: [], audio: s.audio && audio.has(s.audio) ? s.audio : null, custom: true });
 }
 
 export const allSentences = () => [...byId.values()];
@@ -207,6 +208,7 @@ export function openTab(name = app.tab) {
   app.session = null;
   audio.stop();
   tabViews[name]();
+  fx.enter(view.querySelector(".scroll"), { duration: 200 });
   hooks.afterTab?.(name);
 }
 
@@ -215,7 +217,17 @@ export function barHtml(fraction, cls = "") {
   return `<div class="bar ${cls}"><i style="width:${pct}%"></i></div>`;
 }
 
-// Barra do topo, no estilo dos apps de idiomas: curso, sequência, gemas e vidas.
+// Atalho para as missões do dia, com um aviso quando há recompensa para coletar.
+function questsButton() {
+  const counters = daily();
+  const ready = game.dailyQuests(srs.dayStart()).filter((q) => {
+    const status = game.questStatus(q, counters);
+    return status.done && !status.claimed;
+  }).length;
+  return `<button class="stat quests ${ready ? "ready" : ""}" data-act="tab" data-tab="quests" aria-label="Missões do dia">🎯${ready ? ` <b>${ready}</b>` : ""}</button>`;
+}
+
+// Barra do topo, no estilo dos apps de idiomas: curso, sequência, missões, gemas e vidas.
 export function topBar() {
   const today = srs.dayStart();
   const streak = game.currentStreak(app.state.streak, today, app.state.freezes);
@@ -223,6 +235,7 @@ export function topBar() {
   return `<header class="top">
     <span class="flag" title="Curso de inglês">🇺🇸</span>
     <button class="stat ${lit ? "" : "off"}" data-act="tab" data-tab="quests" aria-label="Sequência de ${streak} dias">🔥 <b>${streak}</b></button>
+    ${questsButton()}
     <button class="stat gems" data-act="shop" aria-label="${app.state.gems} gemas">💎 <b>${app.state.gems}</b></button>
     <button class="stat hearts" data-act="shop" aria-label="${hearts().count} vidas">❤️ <b>${hearts().count}</b></button>
   </header>`;
@@ -230,6 +243,7 @@ export function topBar() {
 
 export function titleBar(title, subtitle = "") {
   return `<header class="top titled"><div><h1>${h(title)}</h1>${subtitle ? `<p>${h(subtitle)}</p>` : ""}</div>
+    ${questsButton()}
     <button class="stat gems" data-act="shop">💎 <b>${app.state.gems}</b></button>
     <button class="stat hearts" data-act="shop">❤️ <b>${hearts().count}</b></button></header>`;
 }
@@ -249,4 +263,4 @@ export function dueLabel(id) {
   return `em ${days} dias`;
 }
 
-export { srs, game, ex, store, audio };
+export { srs, game, ex, store, audio, fx };

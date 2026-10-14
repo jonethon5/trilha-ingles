@@ -2095,3 +2095,620 @@ mark {
   font-size: 14px;
   color: var(--muted);
 }
+/* ---------- Personagens e movimento ---------- */
+
+.char {
+  flex: none;
+  display: block;
+  overflow: visible;
+  transform-origin: 50% 100%;
+  animation: breathe 3.4s ease-in-out infinite;
+}
+
+.char .eye,
+.owl .eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 4.6s infinite;
+}
+
+.char .arm {
+  transform-box: fill-box;
+  transform-origin: 50% 8%;
+}
+
+.char .mouth-talk {
+  display: none;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Enquanto uma fala toca, a boca abre e fecha e a cabeça balança de leve. */
+body.talking .char .mouth {
+  display: none;
+}
+
+body.talking .char .mouth-talk {
+  display: block;
+  animation: talk 0.26s ease-in-out infinite alternate;
+}
+
+body.talking .char .head {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  animation: nod 0.7s ease-in-out infinite alternate;
+}
+
+body.talking .owl .beak {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: talk 0.26s ease-in-out infinite alternate;
+}
+
+.char.cheer {
+  animation: jump 0.6s ease-out 2;
+}
+
+.char.cheer .arm-r {
+  animation: wave 0.3s ease-in-out 4 alternate;
+}
+
+.char.cheer .arm-l {
+  animation: wave-l 0.3s ease-in-out 4 alternate;
+}
+
+.char.droop {
+  animation: droop 0.5s ease-out forwards;
+}
+
+.owl {
+  overflow: visible;
+  animation: breathe 3.8s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.owl .wing {
+  transform-box: fill-box;
+  transform-origin: 50% 10%;
+}
+
+.owl.mood-happy .wing-l {
+  animation: flap-l 0.5s ease-in-out infinite alternate;
+}
+
+.owl.mood-happy .wing-r {
+  animation: flap-r 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.02, 0.985);
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes talk {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1.25);
+  }
+}
+
+@keyframes nod {
+  to {
+    transform: rotate(2.5deg);
+  }
+}
+
+@keyframes jump {
+  40% {
+    transform: translateY(-16px) scale(0.98, 1.04);
+  }
+  70% {
+    transform: translateY(0) scale(1.03, 0.96);
+  }
+}
+
+@keyframes wave {
+  to {
+    transform: rotate(-150deg);
+  }
+}
+
+@keyframes wave-l {
+  to {
+    transform: rotate(150deg);
+  }
+}
+
+@keyframes droop {
+  to {
+    transform: rotate(-3deg) translateY(3px) scale(1, 0.97);
+  }
+}
+
+@keyframes flap-l {
+  to {
+    transform: rotate(38deg);
+  }
+}
+
+@keyframes flap-r {
+  to {
+    transform: rotate(-38deg);
+  }
+}
+
+.talk .char {
+  margin-bottom: -2px;
+}
+
+.listen .char {
+  align-self: flex-end;
+}
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx-layer i {
+  position: absolute;
+  top: 0;
+  border-radius: 2px;
+}
+
+.buddy {
+  position: absolute;
+  right: -34px;
+  top: 4px;
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+section:nth-of-type(even) .buddy {
+  right: auto;
+  left: -34px;
+}
+
+.chest-open {
+  animation: chest 0.7s ease-out;
+}
+
+@keyframes chest {
+  0% {
+    transform: scale(0.3) rotate(-20deg);
+  }
+  60% {
+    transform: scale(1.25) rotate(8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.flame,
+.stat:not(.off):first-of-type {
+  display: inline-block;
+}
+
+.streak-count {
+  animation: flicker 1.4s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  50% {
+    transform: scale(1.06);
+    text-shadow: 0 0 22px color-mix(in srgb, var(--gold) 60%, transparent);
+  }
+}
+
+.stat.quests.ready b {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--bad);
+  color: #fff;
+  font-size: 13px;
+  animation: bob 1.4s ease-in-out infinite;
+}
+
+.option,
+.chip,
+.tile,
+.sound-tile,
+.grade,
+.ear-option,
+.part {
+  transition: transform 0.08s, background-color 0.15s, border-color 0.15s;
+}
+
+.option:active,
+.chip:active,
+.tile:active,
+.sound-tile:active,
+.ear-option:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+.tile.matched {
+  animation: matched 0.35s ease-out;
+}
+
+@keyframes matched {
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+.phrase-top {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.phrase-top > div {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Barra de abas com seis itens ---------- */
+
+#tabs button {
+  min-width: 0;
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+.card.hero {
+  border-color: var(--primary);
+}
+
+.card.hero .talk {
+  margin-bottom: 4px;
+}
+
+/* ---------- Aba Sons ---------- */
+
+.sound-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sound-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 78px;
+  padding: 10px 4px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 var(--line);
+}
+
+.sound-tile b {
+  font-size: 26px;
+  line-height: 1.15;
+  font-family: "Charis SIL", "Doulos SIL", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+}
+
+.sound-tile span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.sound-tile.heard {
+  border-color: var(--primary);
+  box-shadow: 0 4px 0 var(--primary);
+}
+
+.sound-tile.heard b {
+  color: var(--primary);
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-back {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.sheet-box {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  padding: 20px 16px calc(env(safe-area-inset-bottom) + 16px);
+  border-radius: 22px 22px 0 0;
+  background: var(--bg);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.sheet-head h3 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.sheet-head h3 i {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--primary);
+}
+
+.sheet-head p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.symbol.big {
+  flex: none;
+  width: 76px;
+  padding: 12px 0;
+  border-radius: 18px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 34px;
+  text-align: center;
+  font-family: "Charis SIL", "Doulos SIL", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+}
+
+.bank.left {
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.ear-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ear-option {
+  min-height: 86px;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 0 var(--line);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.ear-option.right {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+  box-shadow: 0 4px 0 var(--ok);
+}
+
+.ear-option.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+  color: var(--bad);
+  box-shadow: 0 4px 0 var(--bad);
+}
+
+/* ---------- Aba Histórias ---------- */
+
+.story-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.story-icon {
+  flex: none;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  font-size: 32px;
+}
+
+.card.story.muted {
+  opacity: 0.6;
+}
+
+.parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.part {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.part b {
+  flex: 1;
+  font-weight: 700;
+}
+
+.part em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.part.next {
+  border-color: var(--ok);
+  box-shadow: 0 3px 0 var(--ok);
+}
+
+.part.next em,
+.part.next span {
+  color: var(--ok);
+}
+
+.part.done span {
+  color: var(--gold);
+}
+
+.part.locked,
+.part.wait {
+  color: var(--muted);
+  background: var(--sunken);
+}
+
+.pt-toggle {
+  min-width: 46px;
+  min-height: 36px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.pt-toggle.on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.reader-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reader-head h2 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.reader-head .section-title {
+  margin: 0 0 2px;
+}
+
+.line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 2px solid var(--line);
+}
+
+.line > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.line .en {
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.line .w {
+  padding: 0;
+  border: 0;
+  border-bottom: 2px dotted var(--line);
+  background: none;
+  font-size: inherit;
+}
+
+.line .w:active {
+  background: var(--primary-soft);
+  border-radius: 4px;
+}
+
+.line .pt {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.line .pt.veil {
+  color: transparent;
+  background: var(--line);
+  border-radius: 6px;
+  user-select: none;
+}
+
+.line .speak,
+.line .add {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+
+.add {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.add.saved {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.flash .front + .speak {
+  margin-top: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .char,
+  .owl,
+  .char *,
+  .owl *,
+  .buddy,
+  .streak-count,
+  .stat.quests.ready b {
+    animation: none !important;
+  }
+}

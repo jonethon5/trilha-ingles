@@ -3,8 +3,9 @@
 import { $, h, app, actions, show, save, toast, barHtml, allSentences, wordPool, hearts, daily, addXp, schedule, say, sayWord, playFile, effect, srs, game, ex, audio } from "../core.js";
 import { vocabFile } from "../audio-paths.js";
 import { owl } from "../owl.js";
+import { character, castFor } from "../characters.js";
+import * as fx from "../fx.js";
 
-const FACES = ["🧑‍🦱", "👩‍🦰", "🧔", "👩‍🦳", "🧑‍🎓", "👨‍🍳"];
 const USES_HEARTS = { lesson: true, unit: true, practice: false };
 
 const INSTRUCTIONS = {
@@ -17,7 +18,7 @@ const INSTRUCTIONS = {
 
 /**
  * kind: "lesson" (frases novas), "unit" (revisão de unidade), "practice" (repetir lição feita)
- *       ou "review" (revisão espaçada). Só "lesson" e "unit" gastam vidas.
+ *       ou "story" (perguntas no fim de uma história). Só "lesson" e "unit" gastam vidas.
  */
 export function startSession({ kind, title, plan, sentences = [], lessonId = null, back }) {
   if (!plan.length) return back();
@@ -39,7 +40,9 @@ export function startSession({ kind, title, plan, sentences = [], lessonId = nul
     shown: null,
     phase: "answer",
     startedAt: Date.now(),
-    face: 0,
+    cast: castFor(title), // o personagem que acompanha esta sessão
+    entering: false, // true no primeiro desenho de cada exercício, para animar a entrada
+    lastFraction: 0,
   };
   nextExercise();
 }
@@ -59,7 +62,7 @@ function nextExercise() {
   session.current = prepare(entry);
   session.shown = entry;
   session.phase = "answer";
-  session.face = (session.face + 1) % FACES.length;
+  session.entering = true;
   if (entry.s?.audio) audio.preload([entry.s.audio]);
   draw();
   if (entry.type === "listen" || entry.type === "choice") say(entry.s);
@@ -68,7 +71,14 @@ function nextExercise() {
 
 function bubble(text, sentence, lang) {
   const speak = sentence && (sentence.audio || audio.canSynthesize) ? `<button class="speak" data-act="say" aria-label="Ouvir">🔊</button>` : "";
-  return `<div class="talk"><span class="face">${FACES[app.session.face]}</span><div class="bubble">${speak}<p ${lang ? `lang="${lang}"` : ""}>${h(text)}</p></div></div>`;
+  return `<div class="talk">${actor()}<div class="bubble">${speak}<p ${lang ? `lang="${lang}"` : ""}>${h(text)}</p></div></div>`;
+}
+
+// O personagem da sessão, com a expressão do momento: neutro, contente no acerto, triste no erro.
+function actor(height = 132) {
+  const { phase, current, cast } = app.session;
+  if (phase !== "feedback") return character(cast, { height });
+  return character(cast, current.ok ? { mood: "happy", height, cls: "cheer" } : { mood: "sad", height, cls: "droop" });
 }
 
 function body(entry, cur) {
@@ -97,7 +107,7 @@ function body(entry, cur) {
     .join("");
   const head =
     type === "listen"
-      ? `<div class="listen"><button class="speak" data-act="say" aria-label="Ouvir">🔊</button><button class="speak slow" data-act="say-slow" aria-label="Ouvir devagar">🐢</button></div>`
+      ? `<div class="listen">${actor(120)}<button class="speak" data-act="say" aria-label="Ouvir">🔊</button><button class="speak slow" data-act="say-slow" aria-label="Ouvir devagar">🐢</button></div>`
       : bubble(s.pt);
   return `${head}<div class="answer-line" lang="en">${picked}</div><div class="bank" lang="en">${bank}</div>`;
 }
@@ -166,6 +176,32 @@ function draw() {
       if (session.phase === "answer" && typing.value.trim()) checkAnswer();
     };
   }
+  animate(answered);
+}
+
+// Movimento depois de cada desenho: a barra avança, o exercício novo chega, o retorno sobe.
+function animate(answered) {
+  const session = app.session;
+  const fill = $(".session-top .bar i");
+  const target = session.done / session.total;
+  if (fill && target !== session.lastFraction) {
+    fill.style.width = `${Math.round(session.lastFraction * 100)}%`;
+    requestAnimationFrame(() => (fill.style.width = `${Math.round(target * 100)}%`));
+    session.lastFraction = target;
+  }
+  if (session.entering) {
+    session.entering = false;
+    fx.enter($(".exercise"), { from: "translateX(28px)" });
+  }
+  if (answered && !session.current.revealed) {
+    session.current.revealed = true;
+    fx.enter($(".session-foot"), { from: "translateY(100%)", duration: 260 });
+    if (!session.current.ok) fx.shake($(".exercise"));
+  }
+  if (session.popChip !== undefined) {
+    fx.pop($(`.answer-line .chip[data-id="${session.popChip}"]`));
+    session.popChip = undefined;
+  }
 }
 
 // Registra acerto ou erro do exercício atual e mostra o retorno.
@@ -185,21 +221,23 @@ function resolve(ok) {
     session.maxCombo = Math.max(session.maxCombo, session.combo);
     const today = daily();
     today.combo = Math.max(today.combo, session.combo);
-    if ([3, 5, 10].includes(session.combo)) toast(`${session.combo} seguidas! 🔥`, 1500);
+    session.milestone = [3, 5, 10].includes(session.combo);
+    if (session.milestone) toast(`${session.combo} seguidas! 🔥`, 1500);
   } else {
     registerMistake();
     session.queue.push(session.queue.shift());
   }
   // Fora das lições novas, cada frase aparece uma vez: o resultado já vale na hora
   // e fica salvo mesmo se a sessão for interrompida.
-  if (s && session.kind !== "lesson" && !session.scheduled.has(s.id)) {
+  if (s && session.kind !== "lesson" && session.kind !== "story" && !session.scheduled.has(s.id)) {
     session.scheduled.add(s.id);
     schedule(s.id, ok);
     if (session.kind === "review") daily().reviewed++;
   }
   save();
   session.phase = "feedback";
-  effect(ok ? "correct" : "wrong");
+  effect(!ok ? (USES_HEARTS[session.kind] ? "heart" : "wrong") : session.milestone ? "combo" : "correct");
+  session.milestone = false;
   draw();
   if (s) say(s);
 }
@@ -231,6 +269,7 @@ function tapPair(side, id) {
   if (cur.left === null || cur.right === null) return draw();
   if (cur.left === cur.right) {
     cur.matched.push(cur.left);
+    effect("match");
     cur.left = null;
     cur.right = null;
     if (cur.matched.length === entry.pairs.length) return resolve(true);
@@ -298,7 +337,7 @@ export function complete({ kind, mistakes, total, startedAt, back }) {
   if (result.usedFreeze) state.freezes--;
   save();
   audio.stop();
-  effect("done");
+  effect(levelUp ? "level" : "done");
 
   const accuracy = Math.round((total / (total + mistakes)) * 100);
   app.session = { back, streakScreen: firstToday, usedFreeze: result.usedFreeze };
@@ -307,6 +346,8 @@ export function complete({ kind, mistakes, total, startedAt, back }) {
     unit: "Unidade concluída. A próxima está liberada.",
     practice: "Praticar mantém as frases frescas.",
     review: "Cada cartão volta na data certa para você não esquecer.",
+    story: "Parte concluída. A próxima fica disponível amanhã.",
+    sounds: "Ouvido treinado. Volte amanhã para outra rodada.",
   };
   show(
     `<div class="center">${owl("happy", 150)}
@@ -321,7 +362,13 @@ export function complete({ kind, mistakes, total, startedAt, back }) {
     <div class="session-foot"><button class="btn" data-act="after-result">Continuar</button></div>`,
     { showTabs: false },
   );
+  // A comemoração: confete, a coruja pula e os números sobem contando.
+  fx.confetti(mistakes ? 40 : 90);
+  fx.pop($(".center .owl"));
+  fx.stagger(document.querySelectorAll(".result-row > div"), 110);
+  for (const el of document.querySelectorAll(".result-row b")) fx.countUp(el);
 }
+
 function showStreak() {
   const { back, usedFreeze } = app.session;
   const today = srs.dayStart();
@@ -339,6 +386,9 @@ function showStreak() {
     <div class="session-foot"><button class="btn" data-act="leave">Continuar</button></div>`,
     { showTabs: false },
   );
+  effect("streak");
+  fx.pop($(".streak-count"));
+  fx.stagger(document.querySelectorAll(".week > div"), 60);
 }
 
 function showFailed() {
@@ -360,6 +410,8 @@ Object.assign(actions, {
     const id = Number(el.dataset.id);
     if (cur.picked.includes(id)) return;
     cur.picked.push(id);
+    app.session.popChip = id;
+    effect("pick");
     draw();
     // No exercício de ouvir, falar a palavra tocada entregaria a resposta.
     if (app.session.queue[0].type === "build") sayWord(cur.bank[id].text);
@@ -367,10 +419,12 @@ Object.assign(actions, {
   unpick: (el) => {
     const cur = app.session.current;
     cur.picked = cur.picked.filter((id) => id !== Number(el.dataset.id));
+    effect("drop");
     draw();
   },
   select: (el) => {
     app.session.current.selected = Number(el.dataset.i);
+    effect("pick");
     draw();
   },
   pair: (el) => tapPair(el.dataset.side, Number(el.dataset.id)),
